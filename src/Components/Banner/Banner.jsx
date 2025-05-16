@@ -1,11 +1,11 @@
 import React from 'react'
 
-const Leave = () => {
+const Banner = () => {
   return (
     <div>
-      Leave
+      Banner
     </div>
   )
 }
 
-export default Leave
+export default Banner

@@ -3,5 +3,5 @@ html, body, #root {
   height: 100%;
   margin: 0;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background-color: #f0f2f5; /* AntD default background */
+  background-color: #f0f2f5; 
 }

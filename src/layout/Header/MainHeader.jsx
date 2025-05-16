@@ -6,14 +6,18 @@ import {
   BellOutlined,
   UserSwitchOutlined,
 } from "@ant-design/icons";
+import colors from "../../theme/color";
+import { useNavigate } from "react-router-dom";
+
 
 const { Text } = Typography;
 
 const MainHeader = ({isMobile, toggleDrawer}) => {
+  const navigate = useNavigate();
   return (
     <Header
       style={{
-        background: "#B2C6B6",
+        background: colors.primary,
         padding: "0 24px",
         display: "flex",
         alignItems: "center",
@@ -25,17 +29,17 @@ const MainHeader = ({isMobile, toggleDrawer}) => {
         {isMobile && (
           <MenuOutlined
             onClick={toggleDrawer}
-            style={{ fontSize: 20, cursor: "pointer", color: "#000" }}
+            style={{ fontSize: 20, cursor: "pointer", color: "#fff" }}
           />
         )}
-        <Text strong style={{ fontSize: 18 }}>
+        <Text strong style={{ fontSize: 18, color:"#ffffff" }}>
           My Admin Dashboard
         </Text>
       </div>
 
       <Space size="large">
-        <BellOutlined style={{ fontSize: 16, cursor: "pointer" }} />
-        <UserSwitchOutlined style={{ fontSize: 16, cursor: "pointer" }} />
+        <BellOutlined style={{ fontSize: 16, cursor: "pointer",color: "#fff" }} />
+        <UserSwitchOutlined style={{ fontSize: 16, cursor: "pointer",color: "#fff" }} onClick={()=> navigate("/login")} />
       </Space>
     </Header>
   );

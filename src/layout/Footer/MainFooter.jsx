@@ -8,9 +8,9 @@ const MainFooter = () => {
       style={{
         textAlign: "center",
         color: "rgba(0,0,0,0.45)",
-        padding: "8px 0",
+        padding: "6px 0",
         fontSize: "12px",
-        lineHeight: "1.4",
+        lineHeight: "1.2",
         background:"transparent"
       }}
     >

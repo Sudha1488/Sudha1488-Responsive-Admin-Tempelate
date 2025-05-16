@@ -1,7 +1,42 @@
 .custom-sidebar-menu .ant-menu-sub {
-  background-color: #B2C6B6 !important; 
+  background-color: #303531 !important; 
 }
 
 .custom-sidebar-menu .ant-menu-submenu-title {
   color: #fff; 
 }
+
+.ant-layout-sider .ant-layout-sider-trigger {
+  background-color: #303531 !important;
+  color: white !important;
+}
+
+.ant-layout-sider .ant-layout-sider-trigger:hover {
+  background-color: #9AAEA1 !important;
+}
+
+/* Apply to the sidebar scrollable area */
+.sidebar-container {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.3) transparent; /* Firefox */
+}
+
+/* Chrome, Edge, Safari */
+.sidebar-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.sidebar-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sidebar-container::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.3);
+  border-radius: 8px;
+  transition: background-color 0.3s ease;
+}
+
+.sidebar-container::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(255, 255, 255, 0.5);
+}
+
