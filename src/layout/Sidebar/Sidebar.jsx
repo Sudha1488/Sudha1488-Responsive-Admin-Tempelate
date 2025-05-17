@@ -3,7 +3,6 @@ import { Menu, Typography } from "antd";
 import { Link, useLocation } from "react-router-dom";
 import {
   HomeOutlined,
-  LoginOutlined,
   UserOutlined,
   TeamOutlined,
   UserAddOutlined,
@@ -19,13 +18,12 @@ const Sidebar = ({ collapsed, isMobile, closeSidebar }) => {
   const [openKeys, setOpenKeys] = useState([]);
 
   const rootSubmenuKeys = [
-    "/employee",
+    // "/employee",
     "/access",
     "/manage-blogs",
     "/masters",
   ];
 
-  // Only one root submenu open at a time
   const onOpenChange = (keys) => {
     const latestOpenKey = keys.find((key) => openKeys.indexOf(key) === -1);
     if (rootSubmenuKeys.includes(latestOpenKey)) {
@@ -43,8 +41,8 @@ const Sidebar = ({ collapsed, isMobile, closeSidebar }) => {
 
   const getSelectedKey = (path) => {
   const matchedKeys = [
-    "/employee/details",
-    "/employee/add",
+    // "/employee/details",
+    // "/employee/add",
     "/access/user",
     "/access/roles",
     "/access/permissions",
@@ -121,7 +119,7 @@ const Sidebar = ({ collapsed, isMobile, closeSidebar }) => {
           <Link to="/login" onClick={handleClick}>Login</Link>
         </Menu.Item> */}
 
-        <Menu.SubMenu key="/employee" icon={<TeamOutlined />} title="Employee">
+        {/* <Menu.SubMenu key="/employee" icon={<TeamOutlined />} title="Employee">
           <Menu.Item key="/employee/details" icon={<UserOutlined />}>
             <Link to="/employee/details" onClick={handleClick}>Details</Link>
           </Menu.Item>
@@ -132,7 +130,7 @@ const Sidebar = ({ collapsed, isMobile, closeSidebar }) => {
 
         <Menu.Item key="/leave" icon={<CalendarOutlined />}>
           <Link to="/leave" onClick={handleClick}>Leave</Link>
-        </Menu.Item>
+        </Menu.Item> */}
 
         <Menu.SubMenu key="/access" icon={<TeamOutlined />} title="Access">
           <Menu.Item key="/access/user" icon={<UserOutlined />}>

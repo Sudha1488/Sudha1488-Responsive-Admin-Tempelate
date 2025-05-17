@@ -7,9 +7,9 @@ import Home from "../pages/Home";
 import Login from "../pages/LoginPage/Login";
 
 //components
-import EmployeeDetails from "../Components/Employee/EmployeeDetails/EmployeeDetails";
-import AddEmployee from "../Components/Employee/AddEmployee/AddEmployee";
-import Leave from "./../Components/Leave/Leave";
+// import EmployeeDetails from "../Components/Employee/EmployeeDetails/EmployeeDetails";
+// import AddEmployee from "../Components/Employee/AddEmployee/AddEmployee";
+// import Leave from "./../Components/Leave/Leave";
 import User from "../Components/Access/User/User";
 import Roles from "../Components/Access/Roles/Roles";
 import Permissions from "../Components/Access/Permissions/Permissions";
@@ -31,10 +31,10 @@ const AppRoutes = () => {
         <Route element={<MainLayout />}>
           <Route path="/" element={<Home />} />
 
-          <Route path="/leave" element={<Leave />} />
+          {/* <Route path="/leave" element={<Leave />} />
 
           <Route path="/employee/details" element={<EmployeeDetails />} />
-          <Route path="/employee/add" element={<AddEmployee />} />
+          <Route path="/employee/add" element={<AddEmployee />} /> */}
 
           <Route path="/access/user" element={<User />} />
           <Route path="/access/roles" element={<Roles />} />

@@ -11,6 +11,7 @@ import "./Login.css";
 import colors from "../../theme/color";
 import Password from "antd/es/input/Password";
 import { useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
 
 const { Title } = Typography;
 
@@ -19,29 +20,36 @@ const Login = () => {
   const [userPassword, setPassword] = useState("");
   const navigate = useNavigate();
 
-  const handleSubmit = () => {
-    console.log("Logged in", userEmail, Password);
-    navigate("/");
+  const handleSubmit = async () => {
+    try {
+      const response = await fetch(
+        `http://localhost:4000/users?email=${encodeURIComponent(userEmail)}&password=${encodeURIComponent(userPassword)}`
+      );
+
+      const users = await response.json();
+
+      if (users.length === 1) {
+        toast.success("Login Successfull!");
+        navigate("/");
+      } else {
+        toast.error("Invalid Email or Passwrod");
+      }
+    } catch (error) {
+      console.error(error);
+      message.error("Something went wrong. Please try again.");
+    }
   };
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        backgroundColor: "#f5f5f5",
-        fontSize: "56px",
-      }}
-    >
+    <div className="login-page">
       <div className="login-wrapper">
         <Title
+          className="login-title"
           level={1}
           style={{
             textAlign: "center",
             marginBottom: "30px",
             fontWeight: "bold",
-            color: colors.secondary,
+            color: colors.primary,
             fontSize: "56px",
           }}
         >
@@ -94,7 +102,7 @@ const Login = () => {
                 shape="round"
                 icon={<ArrowRightOutlined />}
                 size="large"
-                style={{ backgroundColor: colors.secondary }}
+                style={{ backgroundColor: colors.primary }}
                 className="login-button"
               />
             </Form.Item>
