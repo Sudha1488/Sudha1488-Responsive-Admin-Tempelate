@@ -11,8 +11,11 @@ import { useNavigate } from "react-router-dom";
 
 const { Text } = Typography;
 
-const MainHeader = ({ isMobile, toggleDrawer }) => {
+const MainHeader = ({ isMobile, toggleDrawer, collapsed }) => {
   const navigate = useNavigate();
+
+  const siderWidth = isMobile ? 0 : collapsed ? 80 : 200;
+
   return (
     <Header
       style={{
@@ -24,8 +27,10 @@ const MainHeader = ({ isMobile, toggleDrawer }) => {
         boxShadow: "0 1px 4px rgba(3, 3, 3, 0.08)",
         position: "fixed",
         top: 0,
-        width: "85.5%",
+        left: siderWidth,
+        width: isMobile ? "100vw" : `calc(100vw - ${siderWidth}px)`,
         zIndex: 1000,
+        transition: "all 0.3s",
       }}
     >
       <div style={{ display: "flex", alignItems: "center", gap: 16 }}>

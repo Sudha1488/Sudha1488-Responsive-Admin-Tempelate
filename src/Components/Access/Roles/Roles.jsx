@@ -146,6 +146,8 @@ const Roles = () => {
     {
       title: "Actions",
       key: "actions",
+      width:150,
+      fixed:"right",
       render: (_, record) => (
         <Space>
           <Button
@@ -247,17 +249,21 @@ const Roles = () => {
           boxShadow: "0 4px 10px rgba(0,0,0,0.06)",
         }}
       >
+        <div style={{ overflowX: "auto" }}>
+
         <Table
           dataSource={roles.filter(
             (role) =>
-              role.name.toLowerCase().includes(searchTerm) ||
-              role.description.toLowerCase().includes(searchTerm)
+              role.name?.toLowerCase().includes(searchTerm) ||
+              role.description?.toLowerCase().includes(searchTerm)
           )}
           columns={columns}
           loading={loading}
+          scroll={{ x: 900 }}
           rowKey="id"
           pagination={{ pageSize: 5 }}
         />
+        </div>
       </div>
 
       <Drawer

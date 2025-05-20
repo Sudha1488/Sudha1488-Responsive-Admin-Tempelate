@@ -171,8 +171,8 @@ const Sidebar = ({ collapsed, isMobile, closeSidebar }) => {
           </Menu.Item>
         </Menu.SubMenu>
 
-        <Menu.Item key="/pages" icon={<CalendarOutlined />}>
-          <Link to="/pages" onClick={handleClick}><FileTextOutlined/></Link>
+        <Menu.Item key="/pages" icon={<FileTextOutlined/>}>
+          <Link to="/pages" onClick={handleClick}>Pages</Link>
         </Menu.Item>
 
         <Menu.Item key="/inquiries" icon={<QuestionCircleOutlined />}>

@@ -199,6 +199,8 @@ const Category = () => {
     {
       title: "Actions",
       key: "actions",
+      width:150,
+      fixed:"right",
       render: (_, record) => (
         <Space>
           <Button
@@ -305,6 +307,8 @@ const Category = () => {
           boxShadow: "0 4px 10px rgba(0,0,0,0.06)",
         }}
       >
+        <div style={{ overflowX: "auto" }}>
+
         <Table
           dataSource={categories.filter(
             (category) =>
@@ -314,8 +318,10 @@ const Category = () => {
           columns={columns}
           loading={loading}
           rowKey="id"
+          scroll={{x:900}}
           pagination={{ pageSize: 5 }}
         />
+        </div>
       </div>
 
       <Drawer

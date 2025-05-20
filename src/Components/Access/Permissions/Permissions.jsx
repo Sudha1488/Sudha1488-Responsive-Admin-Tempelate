@@ -23,7 +23,6 @@ import {
 } from "@ant-design/icons";
 import colors from "../../../theme/color";
 
-
 const staticPermissions = [
   {
     id: 1,
@@ -54,13 +53,13 @@ const staticPermissions = [
 const Permissions = () => {
   const [permissions, setPermissions] = useState(staticPermissions);
   const [loading, setLoading] = useState(false);
-  
+
   const [drawerVisible, setDrawerVisible] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [selectedPermission, setSelectedPermission] = useState(null);
   const [viewMode, setViewMode] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  
+
   const [form] = Form.useForm();
 
   const showDrawer = () => {
@@ -83,7 +82,9 @@ const Permissions = () => {
     try {
       if (isEditing && selectedPermission) {
         const updated = permissions.map((permission) =>
-          permission.id === selectedPermission.id ? { ...permission, ...values } : permission
+          permission.id === selectedPermission.id
+            ? { ...permission, ...values }
+            : permission
         );
         setPermissions(updated);
         toast.success("Permission updated successfully");
@@ -150,6 +151,8 @@ const Permissions = () => {
     {
       title: "Actions",
       key: "actions",
+      width: 150,
+      fixed: "right",
       render: (_, record) => (
         <Space>
           <Button
@@ -251,17 +254,20 @@ const Permissions = () => {
           boxShadow: "0 4px 10px rgba(0,0,0,0.06)",
         }}
       >
-        <Table
-          dataSource={permissions.filter(
-            (permission) =>
-              permission.name.toLowerCase().includes(searchTerm) ||
-              permission.description.toLowerCase().includes(searchTerm)
-          )}
-          columns={columns}
-          loading={loading}
-          rowKey="id"
-          pagination={{ pageSize: 5 }}
-        />
+        <div style={{ overflowX: "auto" }}>
+          <Table
+            dataSource={permissions.filter(
+              (permission) =>
+                permission.name?.toLowerCase().includes(searchTerm) ||
+                permission.description?.toLowerCase().includes(searchTerm)
+            )}
+            columns={columns}
+            loading={loading}
+            rowKey="id"
+            scroll={{ x: 900 }}
+            pagination={{ pageSize: 5 }}
+          />
+        </div>
       </div>
 
       <Drawer
@@ -273,7 +279,11 @@ const Permissions = () => {
               color: "#fff",
             }}
           >
-            {viewMode ? "View Permission" : isEditing ? "Edit Permission" : "Add New Permission"}
+            {viewMode
+              ? "View Permission"
+              : isEditing
+              ? "Edit Permission"
+              : "Add New Permission"}
           </div>
         }
         width={360}
@@ -297,7 +307,9 @@ const Permissions = () => {
           <Form.Item
             name="name"
             label="Permission Name"
-            rules={[{ required: true, message: "Please enter the permission name" }]}
+            rules={[
+              { required: true, message: "Please enter the permission name" },
+            ]}
           >
             <Input placeholder="Enter permission name" disabled={viewMode} />
           </Form.Item>

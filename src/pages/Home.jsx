@@ -1,12 +1,5 @@
 import React from "react";
-import {
-  Layout,
-  Card,
-  Row,
-  Col,
-  Typography,
-  Progress,
-} from "antd";
+import { Layout, Card, Row, Col, Typography, Progress } from "antd";
 import {
   UserOutlined,
   TeamOutlined,
@@ -14,8 +7,8 @@ import {
   CalendarOutlined,
 } from "@ant-design/icons";
 import {
-  BarChart,
-  Bar,
+  LineChart,
+  Line,
   PieChart,
   Pie,
   Cell,
@@ -31,9 +24,13 @@ const { Content } = Layout;
 const { Title, Text } = Typography;
 
 const Home = () => {
-  const userStatusData = [
-    { name: "Active", value: 32592, fill: "#52c41a" },
-    { name: "Inactive", value: 25228, fill: "#faad14" },
+  const userGrowthData = [
+    { month: "Jan", users: 120 },
+    { month: "Feb", users: 200 },
+    { month: "Mar", users: 280 },
+    { month: "Apr", users: 350 },
+    { month: "May", users: 420 },
+    { month: "Jun", users: 510 },
   ];
 
   const userRoleData = [
@@ -43,43 +40,63 @@ const Home = () => {
   ];
 
   const DataCard = ({ icon, title, value, percentage, color }) => {
-  return (
-    <Card bordered={false} style={{ minHeight: 140, position: "relative" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-        <div>
-          <div style={{ display: "flex", alignItems: "center", marginBottom: 4 }}>
-            <span style={{ fontSize: 20, marginRight: 8, color }}>{icon}</span>
-            <Text type="secondary" style={{ fontSize: 13 }}>{title}</Text>
+    return (
+      <Card
+        bordered={false}
+        style={{
+          minHeight: 150,
+          borderRadius: 16,
+          boxShadow: "0 2px 12px rgba(0, 0, 0, 0.05)",
+          transition: "transform 0.2s",
+        }}
+        bodyStyle={{ padding: 20 }}
+        hoverable
+      >
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+        >
+          <div>
+            <div
+              style={{ display: "flex", alignItems: "center", marginBottom: 6 }}
+            >
+              <span style={{ fontSize: 22, marginRight: 8, color }}>
+                {icon}
+              </span>
+              <Text type="secondary" style={{ fontSize: 14 }}>
+                {title}
+              </Text>
+            </div>
+            <Title level={4} style={{ margin: 0 }}>
+              {value.toLocaleString()}
+            </Title>
           </div>
-          <Title level={4} style={{ margin: "4px 0" }}>{value.toLocaleString()}</Title>
-        </div>
-
-        <div style={{ textAlign: "center" }}>
-          <Text type="secondary" style={{ fontSize: 12 }}>Percentage%</Text>
           <Progress
             type="circle"
             percent={percentage}
             strokeColor={color}
             strokeWidth={10}
             width={60}
-            style={{ marginTop: 4 }}
+            style={{ transition: "all 0.3s ease-in-out" }}
           />
         </div>
-      </div>
-    </Card>
-  );
-};
-
+      </Card>
+    );
+  };
 
   return (
-    <Layout style={{ minHeight: "100vh", background: "#f0f2f5" }}>
-      <Content style={{ padding: "16px" }}>
-        <div>
-          <Title level={3} style={{ marginBottom: 16 }}>Dashboard</Title>
-        </div>
+    <Layout style={{ minHeight: "100vh", background: "#f9fafc" }}>
+      <Content style={{ padding: "24px" }}>
+        <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
+          <Col span={24}>
+            <Title level={3} style={{ marginBottom: 24, color: "#1f1f1f" }}>
+              Dashboard Overview
+            </Title>
+          </Col>
 
-        {/* Data card Row */}
-        <Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
           <Col xs={24} sm={12} md={6}>
             <DataCard
               icon={<TeamOutlined />}
@@ -94,7 +111,7 @@ const Home = () => {
               icon={<UserOutlined />}
               title="ACTIVE USERS"
               value={90}
-              percentage={86}
+              percentage={89}
               color="#1890ff"
             />
           </Col>
@@ -103,7 +120,7 @@ const Home = () => {
               icon={<ClockCircleOutlined />}
               title="INACTIVE USERS"
               value={11}
-              percentage={86}
+              percentage={11}
               color="#faad14"
             />
           </Col>
@@ -118,60 +135,75 @@ const Home = () => {
           </Col>
         </Row>
 
-        {/* Chart Row */}
         <Row gutter={[16, 16]}>
           <Col xs={24} md={12}>
-            <Card bordered={false} style={{ height: 280 }}>
-              <Title level={5} style={{ marginBottom: 12, color: "#555" }}>
-                ACTIVE VS INACTIVE USERS
+            <Card
+              bordered={false}
+              style={{
+                height: 320,
+                borderRadius: 16,
+                boxShadow: "0 2px 12px rgba(0,0,0,0.05)",
+              }}
+              bodyStyle={{ padding: 16 }}
+            >
+              <Title level={5} style={{ color: "#555", marginBottom: 16 }}>
+                User Growth Over Past Months
               </Title>
-              <div style={{ height: 200 }}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart
-                    data={userStatusData}
-                    margin={{ top: 10, right: 20, left: 0, bottom: 0 }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="name" />
-                    <YAxis />
-                    <Tooltip />
-                    <Legend />
-                    <Bar dataKey="value" name="Users" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
+              <ResponsiveContainer width="100%" height={220}>
+                <LineChart data={userGrowthData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="month" />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+                  <Line
+                    type="monotone"
+                    dataKey="users"
+                    stroke="#1890ff"
+                    strokeWidth={3}
+                    dot={{ r: 5 }}
+                    activeDot={{ r: 7 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
             </Card>
           </Col>
 
           <Col xs={24} md={12}>
-            <Card bordered={false} style={{ height: 280 }}>
-              <Title level={5} style={{ marginBottom: 12, color: "#555" }}>
-                USERS BY ROLE
+            <Card
+              bordered={false}
+              style={{
+                height: 320,
+                borderRadius: 16,
+                boxShadow: "0 2px 12px rgba(0,0,0,0.05)",
+              }}
+              bodyStyle={{ padding: 16 }}
+            >
+              <Title level={5} style={{ color: "#555", marginBottom: 16 }}>
+                Users by Role
               </Title>
-              <div style={{ height: 200 }}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={userRoleData}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={50}
-                      outerRadius={70}
-                      paddingAngle={3}
-                      dataKey="value"
-                      label={({ name, percent }) =>
-                        `${name} ${(percent * 100).toFixed(0)}%`
-                      }
-                    >
-                      {userRoleData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.fill} />
-                      ))}
-                    </Pie>
-                    <Tooltip />
-                    <Legend />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
+              <ResponsiveContainer width="100%" height={220}>
+                <PieChart>
+                  <Pie
+                    data={userRoleData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={50}
+                    outerRadius={80}
+                    paddingAngle={4}
+                    dataKey="value"
+                    label={({ name, percent }) =>
+                      `${name}: ${(percent * 100).toFixed(0)}%`
+                    }
+                  >
+                    {userRoleData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.fill} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
             </Card>
           </Col>
         </Row>

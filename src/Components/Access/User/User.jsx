@@ -30,7 +30,7 @@ const User = () => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  const [drawerVisisble, setDrawerVisible] = useState(false);
+  const [drawerVisible, setDrawerVisible] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [viewMode, setViewMode] = useState(false);
@@ -111,7 +111,7 @@ const User = () => {
       toast.success("User deleted successfully.");
       fetchUsers();
     } catch (error) {
-      console.error("User deleted successfully");
+      console.error("Error deleting user:", error);
       toast.error("Failed to delete user");
     }
   };
@@ -121,35 +121,50 @@ const User = () => {
       title: "Name",
       dataIndex: "name",
       key: "name",
+      width: 150,
     },
     {
       title: "Email",
       dataIndex: "email",
       key: "email",
+      width: 220,
     },
     {
       title: "Phone",
       dataIndex: "phone",
       key: "phone",
+      width: 150,
     },
     {
       title: "Role",
       dataIndex: "role_id",
       key: "role_id",
+      width: 100,
+      render: (role_id) => {
+        const roles = {
+          1: "Admin",
+          2: "User",
+          3: "Manager"
+        };
+        return roles[role_id] || "Unknown";
+      }
     },
     {
       title: "Status",
       dataIndex: "status",
       key: "status",
+      width: 120, 
       render: (status) => (
         <Tag color={status === "active" ? "green" : "red"}>
-          {status.toUpperCase()}
+          {status?.toUpperCase()}
         </Tag>
       ),
     },
     {
       title: "Actions",
       key: "actions",
+      fixed: "right",
+      width: 150,
       render: (_, record) => (
         <Space>
           <Button
@@ -243,6 +258,7 @@ const User = () => {
           </div>
         </div>
       </div>
+      
       <div
         style={{
           backgroundColor: "#fff",
@@ -251,18 +267,21 @@ const User = () => {
           boxShadow: "0 4px 10px rgba(0,0,0,0.06)",
         }}
       >
-        <Table
-          dataSource={users.filter(
-            (user) =>
-              user.name.toLowerCase().includes(searchTerm) ||
-              user.email.toLowerCase().includes(searchTerm) ||
-              user.phone.toLowerCase().includes(searchTerm)
-          )}
-          columns={columns}
-          loading={loading}
-          rowKey="id"
-          pagination={{ pageSize: 5 }}
-        />
+        <div style={{ overflowX: "auto" }}>
+          <Table
+            dataSource={users.filter(
+              (user) =>
+                user.name?.toLowerCase().includes(searchTerm) ||
+                user.email?.toLowerCase().includes(searchTerm) ||
+                user.phone?.toLowerCase().includes(searchTerm)
+            )}
+            columns={columns}
+            loading={loading}
+            rowKey="id"
+            pagination={{ pageSize: 5 }}
+            scroll={{ x: 900 }}
+          />
+        </div>
       </div>
 
       <Drawer
@@ -279,7 +298,7 @@ const User = () => {
         }
         width={360}
         onClose={closeDrawer}
-        visible={drawerVisisble}
+        open={drawerVisible}
         bodyStyle={{ paddingBottom: 80 }}
         destroyOnClose
         headerStyle={{

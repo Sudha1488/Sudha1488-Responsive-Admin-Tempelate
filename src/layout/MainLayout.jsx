@@ -77,7 +77,6 @@ const MainLayout = () => {
         <MainHeader
           isMobile={isMobile}
           toggleDrawer={toggleDrawer}
-          toggleSidebar={toggleCollapsed}
           collapsed={collapsed}
         />
 

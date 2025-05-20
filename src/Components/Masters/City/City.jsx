@@ -164,6 +164,8 @@ const City = () => {
     {
       title: "Actions",
       key: "actions",
+      width:150,
+      fixed:"right",
       render: (_, record) => (
         <Space>
           <Button
