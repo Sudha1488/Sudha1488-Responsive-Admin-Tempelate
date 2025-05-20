@@ -5,10 +5,6 @@ import Sidebar from "./Sidebar/Sidebar";
 import MainHeader from "./Header/MainHeader";
 import MainFooter from "./Footer/MainFooter";
 import colors from "../theme/color";
-import {
-  LeftCircleOutlined,
-  RightCircleOutlined
-} from "@ant-design/icons";
 import SiderTriggerTop from "./Sidebar/SiderTriggerTop";
 
 const { Content } = Layout;
@@ -28,8 +24,11 @@ const MainLayout = () => {
     if (!isMobile) setDrawerVisible(false);
   }, [isMobile]);
 
+  
+  const headerHeight = 64; 
+
   return (
-    <Layout style={{ height: "100vh", overflow: "hidden" }}>
+    <Layout style={{ minHeight: "100vh" }}>
       {isMobile ? (
         <Drawer
           open={drawerVisible}
@@ -59,10 +58,10 @@ const MainLayout = () => {
             bottom: 0,
             backgroundColor: "#3f4641",
             overflow: "hidden",
+            zIndex: 10,
           }}
         >
-          <SiderTriggerTop collapsed={collapsed} onToggle={toggleCollapsed}/>
-
+          <SiderTriggerTop collapsed={collapsed} onToggle={toggleCollapsed} />
           <Sidebar collapsed={collapsed} isMobile={false} />
         </Layout.Sider>
       )}
@@ -72,8 +71,7 @@ const MainLayout = () => {
           marginLeft: isMobile ? 0 : collapsed ? 80 : 200,
           transition: "all 0.3s",
           backgroundColor: colors.secondary,
-          height: "100vh",
-          overflow: "hidden",
+          paddingTop: headerHeight, 
         }}
       >
         <MainHeader
@@ -87,11 +85,9 @@ const MainLayout = () => {
           style={{
             margin: "16px 14px",
             padding: 24,
-            background: "#fff",
+            background: "#F5F5F5",
             borderRadius: 8,
             boxShadow: "0 2px 8px rgba(0,0,0,0.09)",
-            height: "calc(100vh - 134px)",
-            overflow: "auto",
           }}
         >
           <Outlet />

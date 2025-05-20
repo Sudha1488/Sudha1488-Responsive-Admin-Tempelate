@@ -7,6 +7,12 @@ import {
   TeamOutlined,
   UserAddOutlined,
   CalendarOutlined,
+  KeyOutlined,
+  DatabaseOutlined,
+  FileTextOutlined,
+  QuestionCircleOutlined,
+  PictureOutlined,
+  SettingOutlined
 } from "@ant-design/icons";
 import "./Sidebar.css";
 import colors from "../../theme/color";
@@ -132,7 +138,7 @@ const Sidebar = ({ collapsed, isMobile, closeSidebar }) => {
           <Link to="/leave" onClick={handleClick}>Leave</Link>
         </Menu.Item> */}
 
-        <Menu.SubMenu key="/access" icon={<TeamOutlined />} title="Access">
+        <Menu.SubMenu key="/access" icon={<KeyOutlined />} title="Access">
           <Menu.Item key="/access/user" icon={<UserOutlined />}>
             <Link to="/access/user" onClick={handleClick}>User</Link>
           </Menu.Item>
@@ -153,7 +159,7 @@ const Sidebar = ({ collapsed, isMobile, closeSidebar }) => {
           </Menu.Item>
         </Menu.SubMenu>
 
-        <Menu.SubMenu key="/masters" icon={<TeamOutlined />} title="Masters">
+        <Menu.SubMenu key="/masters" icon={<DatabaseOutlined />} title="Masters">
           <Menu.Item key="/masters/country" icon={<UserOutlined />}>
             <Link to="/masters/country" onClick={handleClick}>Country</Link>
           </Menu.Item>
@@ -166,18 +172,18 @@ const Sidebar = ({ collapsed, isMobile, closeSidebar }) => {
         </Menu.SubMenu>
 
         <Menu.Item key="/pages" icon={<CalendarOutlined />}>
-          <Link to="/pages" onClick={handleClick}>Pages</Link>
+          <Link to="/pages" onClick={handleClick}><FileTextOutlined/></Link>
         </Menu.Item>
 
-        <Menu.Item key="/inquiries" icon={<CalendarOutlined />}>
+        <Menu.Item key="/inquiries" icon={<QuestionCircleOutlined />}>
           <Link to="/inquiries" onClick={handleClick}>Inquiries</Link>
         </Menu.Item>
 
-        <Menu.Item key="/banner" icon={<CalendarOutlined />}>
+        <Menu.Item key="/banner" icon={<PictureOutlined/>}>
           <Link to="/banner" onClick={handleClick}>Banner</Link>
         </Menu.Item>
 
-        <Menu.Item key="/settings" icon={<CalendarOutlined />}>
+        <Menu.Item key="/settings" icon={<SettingOutlined/>}>
           <Link to="/settings" onClick={handleClick}>Settings</Link>
         </Menu.Item>
       </Menu>

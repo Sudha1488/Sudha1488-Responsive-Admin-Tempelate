@@ -34,6 +34,7 @@ const User = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [viewMode, setViewMode] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
 
   const [form] = Form.useForm();
 
@@ -59,7 +60,7 @@ const User = () => {
     form.resetFields();
     setIsEditing(false);
     setSelectedUser(null);
-    setViewMode(false)
+    setViewMode(false);
     setDrawerVisible(true);
   };
 
@@ -67,7 +68,7 @@ const User = () => {
     setDrawerVisible(false);
     setIsEditing(false);
     setSelectedUser(null);
-    setViewMode(false)
+    setViewMode(false);
     form.resetFields();
   };
 
@@ -191,33 +192,78 @@ const User = () => {
     <div>
       <div
         style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: 10,
+          backgroundColor: "#fff",
+          padding: "20px",
+          borderRadius: "12px",
+          boxShadow: "0 4px 10px rgba(0,0,0,0.06)",
+          marginBottom: "24px",
         }}
       >
-        <h2
+        <div
           style={{
-            fontSize: "1.8rem",
-            fontWeight: "600",
-            color: colors.primary,
-            margin: 0,
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            flexWrap: "wrap",
+            gap: "12px",
           }}
         >
-          List of Users
-        </h2>
-        <Button icon={<PlusOutlined />} onClick={showDrawer}>
-          Add User
-        </Button>
+          <h2
+            style={{
+              fontSize: "1.8rem",
+              fontWeight: "600",
+              color: colors.primary,
+              margin: 0,
+            }}
+          >
+            List of Users
+          </h2>
+
+          <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
+            <Input.Search
+              placeholder="Search by name, email or phone"
+              allowClear
+              onChange={(e) => setSearchTerm(e.target.value.toLowerCase())}
+              style={{ width: 250 }}
+            />
+
+            <Button
+              icon={<PlusOutlined />}
+              type="primary"
+              size="middle"
+              style={{
+                backgroundColor: colors.secondary,
+                border: "none",
+                padding: "0 16px",
+              }}
+              onClick={showDrawer}
+            >
+              Add User
+            </Button>
+          </div>
+        </div>
       </div>
-      <Table
-        dataSource={users}
-        columns={columns}
-        loading={loading}
-        rowKey="id"
-        pagination={{ pageSize: 5 }}
-      />
+      <div
+        style={{
+          backgroundColor: "#fff",
+          padding: "20px",
+          borderRadius: "12px",
+          boxShadow: "0 4px 10px rgba(0,0,0,0.06)",
+        }}
+      >
+        <Table
+          dataSource={users.filter(
+            (user) =>
+              user.name.toLowerCase().includes(searchTerm) ||
+              user.email.toLowerCase().includes(searchTerm) ||
+              user.phone.toLowerCase().includes(searchTerm)
+          )}
+          columns={columns}
+          loading={loading}
+          rowKey="id"
+          pagination={{ pageSize: 5 }}
+        />
+      </div>
 
       <Drawer
         title={
@@ -228,11 +274,7 @@ const User = () => {
               color: "#fff",
             }}
           >
-            {viewMode
-              ? "View User"
-              : isEditing
-              ? "Edit User"
-              : "Add New User"}
+            {viewMode ? "View User" : isEditing ? "Edit User" : "Add New User"}
           </div>
         }
         width={360}
@@ -322,7 +364,6 @@ const User = () => {
                     style={{
                       width: "100%",
                       backgroundColor: colors.secondary,
-                      // borderColor: colors.primary,
                     }}
                   >
                     Submit
