@@ -245,15 +245,7 @@ const Country = () => {
             List of Countries
           </h2>
 
-          <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
-            <Input.Search
-              placeholder="Search by name or code"
-              allowClear
-              onChange={(e) => setSearchTerm(e.target.value.toLowerCase())}
-              style={{ width: 250 }}
-            />
-
-            <Button
+          <Button
               icon={<PlusOutlined />}
               type="primary"
               size="middle"
@@ -266,7 +258,6 @@ const Country = () => {
             >
               Add Country
             </Button>
-          </div>
         </div>
       </div>
       <div
@@ -277,7 +268,15 @@ const Country = () => {
           boxShadow: "0 4px 10px rgba(0,0,0,0.06)",
         }}
       >
-        <div style={{ overflowX: "auto" }}>
+                  <div style={{marginBottom:"16px", display: "flex", justifyContent:"flex-end" }}>
+            <Input.Search
+              placeholder="Search by name or code"
+              allowClear
+              onChange={(e) => setSearchTerm(e.target.value.toLowerCase())}
+              style={{ width: 250 }}
+            />
+          </div>
+        <div style={{ overflowX:"auto" }}>
 
         <Table
           dataSource={countries.filter(

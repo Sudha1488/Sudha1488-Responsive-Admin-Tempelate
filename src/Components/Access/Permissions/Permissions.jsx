@@ -222,28 +222,19 @@ const Permissions = () => {
             List of Permissions
           </h2>
 
-          <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
-            <Input.Search
-              placeholder="Search by name or description"
-              allowClear
-              onChange={(e) => setSearchTerm(e.target.value.toLowerCase())}
-              style={{ width: 250 }}
-            />
-
-            <Button
-              icon={<PlusOutlined />}
-              type="primary"
-              size="middle"
-              style={{
-                backgroundColor: colors.secondary,
-                border: "none",
-                padding: "0 16px",
-              }}
-              onClick={showDrawer}
-            >
-              Add Permission
-            </Button>
-          </div>
+          <Button
+            icon={<PlusOutlined />}
+            type="primary"
+            size="middle"
+            style={{
+              backgroundColor: colors.secondary,
+              border: "none",
+              padding: "0 16px",
+            }}
+            onClick={showDrawer}
+          >
+            Add Permission
+          </Button>
         </div>
       </div>
       <div
@@ -254,6 +245,20 @@ const Permissions = () => {
           boxShadow: "0 4px 10px rgba(0,0,0,0.06)",
         }}
       >
+        <div
+          style={{
+            marginBottom: "16px",
+            display: "flex",
+            justifyContent: "flex-end",
+          }}
+        >
+          <Input.Search
+            placeholder="Search by name or description"
+            allowClear
+            onChange={(e) => setSearchTerm(e.target.value.toLowerCase())}
+            style={{ width: 300 }}
+          />
+        </div>
         <div style={{ overflowX: "auto" }}>
           <Table
             dataSource={permissions.filter(

@@ -234,15 +234,7 @@ const User = () => {
             List of Users
           </h2>
 
-          <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
-            <Input.Search
-              placeholder="Search by name, email or phone"
-              allowClear
-              onChange={(e) => setSearchTerm(e.target.value.toLowerCase())}
-              style={{ width: 250 }}
-            />
-
-            <Button
+          <Button
               icon={<PlusOutlined />}
               type="primary"
               size="middle"
@@ -255,7 +247,6 @@ const User = () => {
             >
               Add User
             </Button>
-          </div>
         </div>
       </div>
       
@@ -267,6 +258,14 @@ const User = () => {
           boxShadow: "0 4px 10px rgba(0,0,0,0.06)",
         }}
       >
+        <div style={{marginBottom:"16px", display: "flex", justifyContent:"flex-end" }}>
+            <Input.Search
+              placeholder="Search by name, email or phone"
+              allowClear
+              onChange={(e) => setSearchTerm(e.target.value.toLowerCase())}
+              style={{ width: 250 }}
+            />
+          </div>
         <div style={{ overflowX: "auto" }}>
           <Table
             dataSource={users.filter(

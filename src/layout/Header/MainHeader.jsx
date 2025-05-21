@@ -41,7 +41,7 @@ const MainHeader = ({ isMobile, toggleDrawer, collapsed }) => {
           />
         )}
         <Text strong style={{ fontSize: 18, color: "#ffffff" }}>
-          My Admin Dashboard
+          Admin Dashboard
         </Text>
       </div>
 

@@ -217,15 +217,7 @@ const Roles = () => {
             List of Roles
           </h2>
 
-          <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
-            <Input.Search
-              placeholder="Search by name or description"
-              allowClear
-              onChange={(e) => setSearchTerm(e.target.value.toLowerCase())}
-              style={{ width: 250 }}
-            />
-
-            <Button
+          <Button
               icon={<PlusOutlined />}
               type="primary"
               size="middle"
@@ -238,7 +230,6 @@ const Roles = () => {
             >
               Add Role
             </Button>
-          </div>
         </div>
       </div>
       <div
@@ -249,6 +240,17 @@ const Roles = () => {
           boxShadow: "0 4px 10px rgba(0,0,0,0.06)",
         }}
       >
+        <div style={{
+            marginBottom: "16px",
+            display: "flex",
+            justifyContent: "flex-end"}}>
+            <Input.Search
+              placeholder="Search by name or description"
+              allowClear
+              onChange={(e) => setSearchTerm(e.target.value.toLowerCase())}
+              style={{ width: 250 }}
+            />
+          </div>
         <div style={{ overflowX: "auto" }}>
 
         <Table

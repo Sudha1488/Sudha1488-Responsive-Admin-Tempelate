@@ -1,4 +1,3 @@
-
 import {
   Button,
   Drawer,
@@ -36,30 +35,32 @@ const staticCategories = [
   { id: 5, name: "Travel" },
 ];
 
-
 const staticBlogs = [
   {
     id: 1,
     name: "The Future of AI",
-    description: "Exploring the latest trends in artificial intelligence and machine learning.",
+    description:
+      "Exploring the latest trends in artificial intelligence and machine learning.",
     slug: "future-of-ai",
     categoryId: 1,
     imagePath: "/api/placeholder/100/100",
-    status: 2, 
+    status: 2,
   },
   {
     id: 2,
     name: "Healthy Eating Habits",
-    description: "Tips for maintaining a balanced diet and healthy eating patterns.",
+    description:
+      "Tips for maintaining a balanced diet and healthy eating patterns.",
     slug: "healthy-eating-habits",
     categoryId: 2,
     imagePath: "/api/placeholder/100/100",
-    status: 2, 
+    status: 2,
   },
   {
     id: 3,
     name: "Investment Strategies for 2025",
-    description: "Expert advice on how to invest your money wisely in the current market.",
+    description:
+      "Expert advice on how to invest your money wisely in the current market.",
     slug: "investment-strategies-2025",
     categoryId: 3,
     imagePath: "/api/placeholder/100/100",
@@ -88,13 +89,13 @@ const staticBlogs = [
 const Blogs = () => {
   const [blogs, setBlogs] = useState(staticBlogs);
   const [loading, setLoading] = useState(false);
-  
+
   const [drawerVisible, setDrawerVisible] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [selectedBlog, setSelectedBlog] = useState(null);
   const [viewMode, setViewMode] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  
+
   const [form] = Form.useForm();
 
   const showDrawer = () => {
@@ -119,7 +120,7 @@ const Blogs = () => {
         ...values,
         imagePath: "/api/placeholder/100/100",
       };
-      
+
       if (isEditing && selectedBlog) {
         const updated = blogs.map((blog) =>
           blog.id === selectedBlog.id ? { ...blog, ...formData } : blog
@@ -173,7 +174,7 @@ const Blogs = () => {
 
   const renderStatusTag = (status) => {
     let color, text;
-    
+
     switch (status) {
       case 0:
         color = "red";
@@ -191,7 +192,7 @@ const Blogs = () => {
         color = "gray";
         text = "UNKNOWN";
     }
-    
+
     return <Tag color={color}>{text}</Tag>;
   };
 
@@ -240,8 +241,8 @@ const Blogs = () => {
     {
       title: "Actions",
       key: "actions",
-      width:150,
-      fixed:"right",
+      width: 150,
+      fixed: "right",
       render: (_, record) => (
         <Space>
           <Button
@@ -280,12 +281,11 @@ const Blogs = () => {
     },
   ];
 
-
   const generateSlug = (name) => {
     return name
       .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/(^-|-$)/g, '');
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/(^-|-$)/g, "");
   };
 
   return (
@@ -319,28 +319,19 @@ const Blogs = () => {
             List of Blogs
           </h2>
 
-          <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
-            <Input.Search
-              placeholder="Search by name or description"
-              allowClear
-              onChange={(e) => setSearchTerm(e.target.value.toLowerCase())}
-              style={{ width: 250 }}
-            />
-
-            <Button
-              icon={<PlusOutlined />}
-              type="primary"
-              size="middle"
-              style={{
-                backgroundColor: colors.secondary,
-                border: "none",
-                padding: "0 16px",
-              }}
-              onClick={showDrawer}
-            >
-              Add Blog
-            </Button>
-          </div>
+          <Button
+            icon={<PlusOutlined />}
+            type="primary"
+            size="middle"
+            style={{
+              backgroundColor: colors.secondary,
+              border: "none",
+              padding: "0 16px",
+            }}
+            onClick={showDrawer}
+          >
+            Add Blog
+          </Button>
         </div>
       </div>
       <div
@@ -351,20 +342,33 @@ const Blogs = () => {
           boxShadow: "0 4px 10px rgba(0,0,0,0.06)",
         }}
       >
+        <div
+          style={{
+            marginBottom: "16px",
+            display: "flex",
+            justifyContent: "flex-end",
+          }}
+        >
+          <Input.Search
+            placeholder="Search by name or description"
+            allowClear
+            onChange={(e) => setSearchTerm(e.target.value.toLowerCase())}
+            style={{ width: 250 }}
+          />
+        </div>
         <div style={{ overflowX: "auto" }}>
-
-        <Table
-          dataSource={blogs.filter(
-            (blog) =>
-              blog.name.toLowerCase().includes(searchTerm) ||
-              blog.description.toLowerCase().includes(searchTerm)
-          )}
-          columns={columns}
-          loading={loading}
-          rowKey="id"
-          scroll={{x:900}}
-          pagination={{ pageSize: 5 }}
-        />
+          <Table
+            dataSource={blogs.filter(
+              (blog) =>
+                blog.name.toLowerCase().includes(searchTerm) ||
+                blog.description.toLowerCase().includes(searchTerm)
+            )}
+            columns={columns}
+            loading={loading}
+            rowKey="id"
+            scroll={{ x: 900 }}
+            pagination={{ pageSize: 5 }}
+          />
         </div>
       </div>
 
@@ -395,7 +399,7 @@ const Blogs = () => {
           layout="vertical"
           onFinish={onFinish}
           initialValues={{
-            status: 1, 
+            status: 1,
           }}
         >
           <Form.Item
@@ -403,9 +407,9 @@ const Blogs = () => {
             label="Blog Name"
             rules={[{ required: true, message: "Please enter the blog name" }]}
           >
-            <Input 
-              placeholder="Enter blog name" 
-              disabled={viewMode} 
+            <Input
+              placeholder="Enter blog name"
+              disabled={viewMode}
               onChange={(e) => {
                 if (!isEditing && !viewMode) {
                   const slug = generateSlug(e.target.value);
@@ -432,8 +436,8 @@ const Blogs = () => {
             label="Slug"
             rules={[{ required: true, message: "Please enter slug" }]}
           >
-            <Input 
-              placeholder="Enter blog slug" 
+            <Input
+              placeholder="Enter blog slug"
               disabled={viewMode}
               addonBefore="/"
             />
@@ -444,11 +448,8 @@ const Blogs = () => {
             label="Category"
             rules={[{ required: true, message: "Please select a category" }]}
           >
-            <Select 
-              placeholder="Select category" 
-              disabled={viewMode}
-            >
-              {staticCategories.map(category => (
+            <Select placeholder="Select category" disabled={viewMode}>
+              {staticCategories.map((category) => (
                 <Option key={category.id} value={category.id}>
                   {category.name}
                 </Option>
@@ -456,11 +457,7 @@ const Blogs = () => {
             </Select>
           </Form.Item>
 
-          <Form.Item
-            name="image"
-            label="Image"
-            valuePropName="fileList"
-          >
+          <Form.Item name="image" label="Image" valuePropName="fileList">
             {viewMode ? (
               selectedBlog && (
                 <Image

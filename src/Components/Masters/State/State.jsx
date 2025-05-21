@@ -288,8 +288,30 @@ const State = () => {
           >
             List of States
           </h2>
-
-          <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
+            <Button
+              icon={<PlusOutlined />}
+              type="primary"
+              size="middle"
+              style={{
+                backgroundColor: colors.secondary,
+                border: "none",
+                padding: "0 16px",
+              }}
+              onClick={showDrawer}
+            >
+              Add State
+            </Button>
+        </div>
+      </div>
+      <div
+        style={{
+          backgroundColor: "#fff",
+          padding: "20px",
+          borderRadius: "12px",
+          boxShadow: "0 4px 10px rgba(0,0,0,0.06)",
+        }}
+      >
+                  <div style={{marginBottom:"16px", display: "flex", justifyContent:"flex-end" }}>
             <Input.Search
               placeholder="Search by name or code"
               allowClear
@@ -309,31 +331,7 @@ const State = () => {
                 </Option>
               ))}
             </Select>
-
-            <Button
-              icon={<PlusOutlined />}
-              type="primary"
-              size="middle"
-              style={{
-                backgroundColor: colors.secondary,
-                border: "none",
-                padding: "0 16px",
-              }}
-              onClick={showDrawer}
-            >
-              Add State
-            </Button>
           </div>
-        </div>
-      </div>
-      <div
-        style={{
-          backgroundColor: "#fff",
-          padding: "20px",
-          borderRadius: "12px",
-          boxShadow: "0 4px 10px rgba(0,0,0,0.06)",
-        }}
-      >
         <div style={{ overflowX: "auto" }}>
 
         <Table
