@@ -26,6 +26,7 @@ import {
   UploadOutlined,
 } from "@ant-design/icons";
 import colors from "../../../theme/color";
+import usePageTitle from "../../../hooks/usePageTitle";
 
 const staticCategories = [
   { id: 1, name: "Technology" },
@@ -87,6 +88,7 @@ const staticBlogs = [
 ];
 
 const Blogs = () => {
+  usePageTitle('Blogs');
   const [blogs, setBlogs] = useState(staticBlogs);
   const [loading, setLoading] = useState(false);
 

@@ -22,6 +22,7 @@ import {
   PlusOutlined,
 } from "@ant-design/icons";
 import colors from "../../../theme/color";
+import usePageTitle from "../../../hooks/usePageTitle";
 
 const staticStates = [
   { id: 1, name: "California", code: "CA", countryId: 1 },
@@ -42,6 +43,7 @@ const staticCities = [
 ];
 
 const City = () => {
+  usePageTitle('City')
   const [cities, setCities] = useState(staticCities);
   const [loading, setLoading] = useState(false);
   const [drawerVisible, setDrawerVisible] = useState(false);

@@ -22,6 +22,8 @@ import {
   PlusOutlined,
 } from "@ant-design/icons";
 import colors from "../../../theme/color";
+import usePageTitle from "../../../hooks/usePageTitle";
+
 
 const staticPermissions = [
   {
@@ -51,6 +53,7 @@ const staticPermissions = [
 ];
 
 const Permissions = () => {
+  usePageTitle('Permissions');
   const [permissions, setPermissions] = useState(staticPermissions);
   const [loading, setLoading] = useState(false);
 

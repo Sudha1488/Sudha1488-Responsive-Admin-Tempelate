@@ -23,6 +23,7 @@ import {
   PlusOutlined,
 } from "@ant-design/icons";
 import colors from "../../theme/color";
+import usePageTitle from "../../hooks/usePageTitle";
 
 const pagesData = [
   {
@@ -112,6 +113,7 @@ const pagesData = [
 ];
 
 const Pages = () => {
+  usePageTitle("Pages")
   const [pages, setPages] = useState(pagesData);
   const [loading, setLoading] = useState(false);
   

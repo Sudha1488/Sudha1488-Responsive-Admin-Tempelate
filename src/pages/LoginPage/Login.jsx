@@ -12,10 +12,12 @@ import colors from "../../theme/color";
 import Password from "antd/es/input/Password";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
+import usePageTitle from "../../hooks/usePageTitle";
 
 const { Title } = Typography;
 
 const Login = () => {
+  usePageTitle("Login")
   const [userEmail, setEmail] = useState("");
   const [userPassword, setPassword] = useState("");
   const navigate = useNavigate();

@@ -25,10 +25,10 @@ const SiderTriggerTop = ({ collapsed, onToggle }) => {
             fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
             letterSpacing: 1.5,
             color: "#fff",
-            textTransform: "uppercase",
+            // textTransform: "uppercase",
           }}
         >
-          <span style={{ color: "#00e5ff" }}>1</span>
+          <span style={{ color: "#00e5ff" }}>ONE</span>
           <span style={{ color: "#fff" }}>Hero</span>
         </div>
       )}

@@ -22,6 +22,7 @@ import {
   PlusOutlined,
 } from "@ant-design/icons";
 import colors from "../../../theme/color";
+import usePageTitle from "../../../hooks/usePageTitle";
 
 
 const staticCountries = [
@@ -70,6 +71,7 @@ const staticCountries = [
 ];
 
 const Country = () => {
+  usePageTitle("Country")
   const [countries, setCountries] = useState(staticCountries);
   const [loading, setLoading] = useState(false);
   

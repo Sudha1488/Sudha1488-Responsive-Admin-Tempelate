@@ -23,11 +23,13 @@ import {
   Legend,
 } from "recharts";
 import colors from "../theme/color";
+import usePageTitle from "../hooks/usePageTitle";
 
 const { Content } = Layout;
 const { Title, Text } = Typography;
 
 const Dashboard = () => {
+  usePageTitle("Dashboard")
   const blogTrafficData = [
     { month: "Jan", visitors: 3200, pageViews: 4800 },
     { month: "Feb", visitors: 3800, pageViews: 5600 },
@@ -128,8 +130,8 @@ const Dashboard = () => {
   };
 
   return (
-    <Layout style={{ minHeight: "100vh", background: "#f5f5f5" }}>
-      <Content style={{ padding: "24px 32px" }}>
+    <Layout style={{ minHeight: "100vh", background: colors.secondary }}>
+      <Content >
         <div
         style={{
           backgroundColor: "#fff",
@@ -164,8 +166,11 @@ const Dashboard = () => {
             </Text>
         </div>
       </div>
-
-        <Row gutter={[24, 24]} style={{ marginBottom: 24 }}>
+<div style={{backgroundColor:"#f5f5f5", padding: "20px",
+          borderRadius: "12px",
+          boxShadow: "0 4px 10px rgba(0,0,0,0.06)",
+         }}>
+ <Row gutter={[24, 24]} style={{ marginBottom: 24 }}>
           <Col xs={24} sm={12} md={6}>
             <DataCard
               icon={<MessageOutlined />}
@@ -376,6 +381,8 @@ const Dashboard = () => {
             </Card>
           </Col>
         </Row>
+</div>
+       
       </Content>
     </Layout>
   );

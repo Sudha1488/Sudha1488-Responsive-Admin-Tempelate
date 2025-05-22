@@ -25,8 +25,10 @@ import {
   PlusOutlined,
 } from "@ant-design/icons";
 import colors from "../../../theme/color";
+import usePageTitle from "../../../hooks/usePageTitle";
 
 const User = () => {
+  usePageTitle('User');
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(false);
 

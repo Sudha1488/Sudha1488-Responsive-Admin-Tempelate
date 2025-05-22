@@ -24,8 +24,7 @@ const MainLayout = () => {
     if (!isMobile) setDrawerVisible(false);
   }, [isMobile]);
 
-  
-  const headerHeight = 64; 
+  const headerHeight = 64;
 
   return (
     <Layout style={{ minHeight: "100vh" }}>
@@ -66,27 +65,27 @@ const MainLayout = () => {
         </Layout.Sider>
       )}
 
+      <MainHeader
+        isMobile={isMobile}
+        toggleDrawer={toggleDrawer}
+        collapsed={collapsed}
+      />
+
       <Layout
         style={{
           marginLeft: isMobile ? 0 : collapsed ? 80 : 200,
           transition: "all 0.3s",
           backgroundColor: colors.secondary,
-          paddingTop: headerHeight, 
+          paddingTop: headerHeight,
         }}
       >
-        <MainHeader
-          isMobile={isMobile}
-          toggleDrawer={toggleDrawer}
-          collapsed={collapsed}
-        />
-
         <Content
           style={{
             margin: "16px 14px",
-            padding: 24,
-            background: "#F5F5F5",
+            padding: 0,
+            background: colors.secondary,
             borderRadius: 8,
-            boxShadow: "0 2px 8px rgba(0,0,0,0.09)",
+            // boxShadow: "0 2px 8px rgba(0,0,0,0.09)",
           }}
         >
           <Outlet />

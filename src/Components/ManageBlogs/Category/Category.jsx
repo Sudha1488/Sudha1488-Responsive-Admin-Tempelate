@@ -26,6 +26,7 @@ import {
   UploadOutlined,
 } from "@ant-design/icons";
 import colors from "../../../theme/color";
+import usePageTitle from "../../../hooks/usePageTitle";
 
 const staticCategories = [
   {
@@ -71,6 +72,7 @@ const staticCategories = [
 ];
 
 const Category = () => {
+  usePageTitle('Category')
   const [categories, setCategories] = useState(staticCategories);
   const [loading, setLoading] = useState(false);
   

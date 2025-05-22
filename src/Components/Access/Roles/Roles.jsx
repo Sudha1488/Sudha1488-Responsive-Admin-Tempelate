@@ -22,6 +22,7 @@ import {
   PlusOutlined,
 } from "@ant-design/icons";
 import colors from "../../../theme/color";
+import usePageTitle from "../../../hooks/usePageTitle";
 
 const staticRoles = [
   {
@@ -48,6 +49,7 @@ const staticRoles = [
 ];
 
 const Roles = () => {
+  usePageTitle('Roles');
   const [roles, setRoles] = useState(staticRoles);
   const [loading, setLoading] = useState(false);
   

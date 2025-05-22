@@ -26,9 +26,8 @@ import {
   PlusOutlined,
   UploadOutlined,
 } from "@ant-design/icons";
-import colors from "../../theme/color"
-
-
+import colors from "../../theme/color";
+import usePageTitle from "../../hooks/usePageTitle";
 
 const bannersData = [
   {
@@ -64,6 +63,7 @@ const bannersData = [
 ];
 
 const Banner = () => {
+  usePageTitle('Banner')
   const [banners, setBanners] = useState(bannersData);
   const [loading, setLoading] = useState(false);
   

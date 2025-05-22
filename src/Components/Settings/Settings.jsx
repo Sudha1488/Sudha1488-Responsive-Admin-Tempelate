@@ -24,12 +24,17 @@ import {
   MobileOutlined,
 } from "@ant-design/icons";
 import toast from "react-hot-toast";
+import colors from "../../theme/color";
+import usePageTitle from "../../hooks/usePageTitle";
+
 
 const { Title } = Typography;
 const { TabPane } = Tabs;
 const { Option } = Select;
 
 const Settings = () => {
+  usePageTitle('Settings');
+
   const [generalForm] = Form.useForm();
   const [smtpForm] = Form.useForm();
   const [smsForm] = Form.useForm();
@@ -52,15 +57,54 @@ const Settings = () => {
   return (
     <Layout
       className="settings-layout"
-      style={{ padding: "24px", backgroundColor: "#fof2f5" }}
+      style={{  backgroundColor: colors.secondary }}
     >
-      <Title level={2} style={{ marginBottom: "24px" }}>
-        <SettingOutlined />
-        Settings
-      </Title>
+      <div
+        style={{
+          backgroundColor: "#fff",
+          padding: "20px",
+          borderRadius: "12px",
+          boxShadow: "0 4px 10px rgba(0,0,0,0.06)",
+          marginBottom: "24px",
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            flexWrap: "wrap",
+            gap: "12px",
+          }}
+        >
+          <h2
+            style={{
+              fontSize: "1.8rem",
+              fontWeight: "600",
+              color: colors.primary,
+              margin: 0,
+            }}
+          >
+            <SettingOutlined style={{ marginRight: "0.5rem" }} />
+            Settings
+          </h2>
 
-      <Card bordered={false}>
-        <Tabs defaultActiveKey="general" type="card">
+          {/* <Button
+            type="default"
+            danger
+            onClick={() => {
+              generalForm.resetFields();
+              smtpForm.resetFields();
+              smsForm.resetFields();
+              toast.success("Settings reset to default!");
+            }}
+          >
+            Reset to Default
+          </Button> */}
+        </div>
+      </div>
+      <Card bordered={false} style={{backgroundColor:"#ffffff"}}>
+        <Tabs defaultActiveKey="general" type="card" style={{backgroundColor:"#ffffff"}}>
           <TabPane
             tab={
               <span>
@@ -211,7 +255,7 @@ const Settings = () => {
                 SMTP
               </span>
             }
-            key="smtp"
+            key="smtp" style={{backgroundColor:"#ffffff"}}
           >
             <Form
               layout="vertical"
@@ -358,7 +402,7 @@ const Settings = () => {
                 SMS
               </span>
             }
-            key="sms"
+            key="sms" style={{backgroundColor:"#ffffff"}}
           >
             <Form
               layout="vertical"
