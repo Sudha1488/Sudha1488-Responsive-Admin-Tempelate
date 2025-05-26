@@ -108,7 +108,7 @@ const Settings = () => {
           <TabPane
             tab={
               <span>
-                <GlobalOutlined />
+                <GlobalOutlined style={{marginRight:"7px"}}/>
                 General
               </span>
             }
@@ -251,7 +251,7 @@ const Settings = () => {
           <TabPane
             tab={
               <span>
-                <MailOutlined />
+                <MailOutlined style={{marginRight:"7px"}}/>
                 SMTP
               </span>
             }
@@ -398,7 +398,7 @@ const Settings = () => {
           <TabPane
             tab={
               <span>
-                <MobileOutlined />
+                <MobileOutlined style={{marginRight:"7px"}}/>
                 SMS
               </span>
             }
