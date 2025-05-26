@@ -2,7 +2,7 @@
   "users": [
     {
       "id": 1,
-      "name": "Aarav Sharma",
+      "name": "Sudhanand Tiwari",
       "phone": "+91-9876543210",
       "email": "test@gmail.com",
       "profile_img": "https://i.pravatar.cc/150?img=11",
@@ -19,9 +19,9 @@
       "id": 2,
       "name": "Diya Verma",
       "phone": "+91-9123456780",
-      "email": "diya.verma@example.com",
+      "email": "sudhanand.1488@gmail.com",
       "profile_img": "https://i.pravatar.cc/150?img=12",
-      "password": "hashed_password_2",
+      "password": "123456",
       "date_of_birth": "1992-07-25",
       "country_id": 1,
       "state_id": 27,

@@ -29,85 +29,109 @@ const pagesData = [
   {
     id: 1,
     title: "Dashboard",
-    meta_fields: "dashboard, analytics, overview",
-    description: "Main dashboard with key analytics and system overview",
+    slug: "dashboard",
+    meta_title: "Dashboard - Admin Panel",
+    meta_keywords: "dashboard, analytics, overview, admin",
+    meta_description: "Main dashboard with key analytics and system overview for admin panel",
     status: 2,
   },
   {
     id: 2,
     title: "User",
-    meta_fields: "user, profile, account",
-    description: "User management and account settings",
+    slug: "user",
+    meta_title: "User Management - Admin Panel",
+    meta_keywords: "user, profile, account, management",
+    meta_description: "User management and account settings administration",
     status: 2,
   },
   {
     id: 3,
     title: "Permissions",
-    meta_fields: "permissions, access control, security",
-    description: "Manage system permissions and access control",
+    slug: "permissions",
+    meta_title: "Permissions Management - Admin Panel",
+    meta_keywords: "permissions, access control, security, admin",
+    meta_description: "Manage system permissions and access control settings",
     status: 2,
   },
   {
     id: 4,
     title: "Roles",
-    meta_fields: "roles, user roles, access levels",
-    description: "Define and manage user roles and their permissions",
+    slug: "roles",
+    meta_title: "User Roles - Admin Panel",
+    meta_keywords: "roles, user roles, access levels, permissions",
+    meta_description: "Define and manage user roles and their permissions",
     status: 2,
   },
   {
     id: 5,
     title: "Banner",
-    meta_fields: "banner, promotion, display",
-    description: "Banner management for website display",
+    slug: "banner",
+    meta_title: "Banner Management - Admin Panel",
+    meta_keywords: "banner, promotion, display, marketing",
+    meta_description: "Banner management for website display and promotions",
     status: 1,
   },
   {
     id: 6,
     title: "Blogs",
-    meta_fields: "blogs, articles, posts",
-    description: "Manage blog articles and content posts",
+    slug: "blogs",
+    meta_title: "Blog Management - Admin Panel",
+    meta_keywords: "blogs, articles, posts, content",
+    meta_description: "Manage blog articles and content posts",
     status: 2,
   },
   {
     id: 7,
     title: "Category",
-    meta_fields: "category, classification, grouping",
-    description: "Manage content categories and classifications",
+    slug: "category",
+    meta_title: "Category Management - Admin Panel",
+    meta_keywords: "category, classification, grouping, organization",
+    meta_description: "Manage content categories and classifications",
     status: 2,
   },
   {
     id: 8,
     title: "City",
-    meta_fields: "city, location, urban",
-    description: "City management for regional settings",
+    slug: "city",
+    meta_title: "City Management - Admin Panel",
+    meta_keywords: "city, location, urban, geography",
+    meta_description: "City management for regional settings and location data",
     status: 1,
   },
   {
     id: 9,
     title: "Country",
-    meta_fields: "country, nation, global",
-    description: "Country management for international settings",
+    slug: "country",
+    meta_title: "Country Management - Admin Panel",
+    meta_keywords: "country, nation, global, international",
+    meta_description: "Country management for international settings",
     status: 2,
   },
   {
     id: 10,
     title: "State",
-    meta_fields: "state, province, region",
-    description: "State/province management for regional settings",
+    slug: "state",
+    meta_title: "State Management - Admin Panel",
+    meta_keywords: "state, province, region, geography",
+    meta_description: "State/province management for regional settings",
     status: 1,
   },
   {
     id: 11,
     title: "Settings",
-    meta_fields: "settings, configuration, preferences",
-    description: "System settings and configuration options",
+    slug: "settings",
+    meta_title: "System Settings - Admin Panel",
+    meta_keywords: "settings, configuration, preferences, system",
+    meta_description: "System settings and configuration options",
     status: 2,
   },
   {
     id: 12,
     title: "Login",
-    meta_fields: "login, authentication, security",
-    description: "User login and authentication page",
+    slug: "login",
+    meta_title: "Login - Admin Panel",
+    meta_keywords: "login, authentication, security, access",
+    meta_description: "User login and authentication page for admin access",
     status: 2,
   }
 ];
@@ -223,14 +247,9 @@ const Pages = () => {
       key: "title",
     },
     {
-      title: "Meta_Fields",
-      dataIndex: "meta_fields",
-      key: "meta_fields",
-    },
-    {
-      title: "Description",
-      dataIndex: "description",
-      key: "description",
+      title: "Slug",
+      dataIndex: "slug",
+      key: "slug",
     },
     {
       title: "Status",
@@ -344,7 +363,7 @@ const Pages = () => {
       >
         <div style={{ marginBottom: "16px", display: "flex", justifyContent: "flex-end" }}>
           <Input.Search
-            placeholder="Search by title or description"
+            placeholder="Search by title or slug"
             allowClear
             onChange={(e) => setSearchTerm(e.target.value.toLowerCase())}
             style={{ width: 250 }}
@@ -355,13 +374,12 @@ const Pages = () => {
             dataSource={pages.filter(
               (page) =>
                 page.title.toLowerCase().includes(searchTerm) ||
-                page.description.toLowerCase().includes(searchTerm) ||
-                page.meta_fields.toLowerCase().includes(searchTerm)
+                page.slug.toLowerCase().includes(searchTerm)
             )}
             columns={columns}
             loading={loading}
             rowKey="id"
-            scroll={{ x: 900 }}
+            scroll={{ x: 600 }}
             pagination={{ pageSize: 5 }}
           />
         </div>
@@ -415,19 +433,35 @@ const Pages = () => {
           </Form.Item>
 
           <Form.Item
-            name="meta_fields"
-            label="Meta Fields"
-            rules={[{ required: true, message: "Please enter meta fields" }]}
+            name="slug"
+            label="Slug"
+            rules={[{ required: true, message: "Please enter the slug" }]}
           >
-            <Input placeholder="Enter meta fields (comma separated)" disabled={viewMode} />
+            <Input placeholder="Enter page slug" disabled={viewMode} />
           </Form.Item>
 
           <Form.Item
-            name="description"
-            label="Description"
-            rules={[{ required: true, message: "Please enter description" }]}
+            name="meta_title"
+            label="Meta Title"
+            rules={[{ required: true, message: "Please enter meta title" }]}
           >
-            <TextArea rows={4} placeholder="Enter page description" disabled={viewMode} />
+            <Input placeholder="Enter meta title" disabled={viewMode} />
+          </Form.Item>
+
+          <Form.Item
+            name="meta_keywords"
+            label="Meta Keywords"
+            rules={[{ required: true, message: "Please enter meta keywords" }]}
+          >
+            <Input placeholder="Enter meta keywords (comma separated)" disabled={viewMode} />
+          </Form.Item>
+
+          <Form.Item
+            name="meta_description"
+            label="Meta Description"
+            rules={[{ required: true, message: "Please enter meta description" }]}
+          >
+            <TextArea rows={4} placeholder="Enter meta description" disabled={viewMode} />
           </Form.Item>
 
           <Form.Item

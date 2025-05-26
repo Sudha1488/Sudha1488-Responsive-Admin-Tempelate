@@ -13,14 +13,19 @@ import Password from "antd/es/input/Password";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import usePageTitle from "../../hooks/usePageTitle";
+import { useDispatch, useSelector } from "react-redux";
+import { login } from "../../features/auth/authSlice";
 
 const { Title } = Typography;
 
 const Login = () => {
-  usePageTitle("Login")
+  usePageTitle("Login");
   const [userEmail, setEmail] = useState("");
   const [userPassword, setPassword] = useState("");
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const auth = useSelector((state) => state.auth);
+  // console.log("🔍 Auth State:", auth); 
 
   const handleSubmit = async () => {
     try {
@@ -31,6 +36,16 @@ const Login = () => {
       const users = await response.json();
 
       if (users.length === 1) {
+        const user = users[0];
+
+        dispatch(login({
+          user:{
+            id:user.id,
+            name:user.name,
+            email:user.email,
+          },
+          token:`dummy-token-${user.id}`,
+        }))
         toast.success("Login Successfull!");
         navigate("/");
       } else {

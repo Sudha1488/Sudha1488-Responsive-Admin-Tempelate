@@ -8,13 +8,23 @@ import {
 } from "@ant-design/icons";
 import colors from "../../theme/color";
 import { useNavigate } from "react-router-dom";
+import { logout } from "../../features/auth/authSlice";
+import { useDispatch, useSelector } from "react-redux";
 
 const { Text } = Typography;
 
 const MainHeader = ({ isMobile, toggleDrawer, collapsed }) => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const auth = useSelector((state)=>state.auth)
+  // console.log("🔍 Auth State:", auth);
 
   const siderWidth = isMobile ? 0 : collapsed ? 80 : 200;
+
+  const handleLogout = () => {
+    dispatch(logout());
+    navigate("/login");
+  };
 
   return (
     <Header
@@ -40,9 +50,9 @@ const MainHeader = ({ isMobile, toggleDrawer, collapsed }) => {
             style={{ fontSize: 20, cursor: "pointer", color: "#fff" }}
           />
         )}
-        <Text strong style={{ fontSize: 18, color: "#ffffff" }}>
+        {/* <Text strong style={{ fontSize: 18, color: "#ffffff" }}>
           Admin Dashboard
-        </Text>
+        </Text> */}
       </div>
 
       <div>
@@ -52,7 +62,7 @@ const MainHeader = ({ isMobile, toggleDrawer, collapsed }) => {
           />
           <UserSwitchOutlined
             style={{ fontSize: 20, cursor: "pointer", color: "#fff" }}
-            onClick={() => navigate("/login")}
+            onClick={handleLogout}
           />
         </Space>
       </div>
