@@ -1,22 +1,15 @@
 {
   "users": [
     {
-      "id": 1,
-      "name": "Sudhanand Tiwari",
-      "phone": "+91-9876543210",
+      "name": "Sudhanand ",
       "email": "test@gmail.com",
-      "profile_img": "https://i.pravatar.cc/150?img=11",
-      "password": "test",
-      "date_of_birth": "1995-03-12",
-      "country_id": 1,
-      "state_id": 21,
-      "city_id": 101,
-      "address": "22 MG Road, Bengaluru",
-      "role_id": "User",
-      "status": "active"
+      "phone": "+91-987654321010000",
+      "role_id": 1,
+      "status": "active",
+      "id": "1"
     },
     {
-      "id": 2,
+      "id": "2",
       "name": "Diya Verma",
       "phone": "+91-9123456780",
       "email": "sudhanand.1488@gmail.com",
@@ -27,11 +20,11 @@
       "state_id": 27,
       "city_id": 102,
       "address": "Sector 5, Noida",
-      "role_id": "Admin",
+      "role_id": 1,
       "status": "inactive"
     },
     {
-      "id": 3,
+      "id": "3",
       "name": "Rohan Mehta",
       "phone": "+91-9988776655",
       "email": "rohan.mehta@example.com",
@@ -42,11 +35,11 @@
       "state_id": 28,
       "city_id": 103,
       "address": "Lake Road, Hyderabad",
-      "role_id": "User",
+      "role_id": 2,
       "status": "active"
     },
     {
-      "id": 4,
+      "id": "4",
       "name": "Ananya Iyer",
       "phone": "+91-9871122334",
       "email": "ananya.iyer@example.com",
@@ -57,11 +50,11 @@
       "state_id": 29,
       "city_id": 104,
       "address": "Anna Nagar, Chennai",
-      "role_id": "Manager",
+      "role_id": 3,
       "status": "inactive"
     },
     {
-      "id": 5,
+      "id": "5",
       "name": "Kabir Joshi",
       "phone": "+91-9345678910",
       "email": "kabir.joshi@example.com",
@@ -72,11 +65,11 @@
       "state_id": 24,
       "city_id": 105,
       "address": "Ellisbridge, Ahmedabad",
-      "role_id": "User",
+      "role_id": 2,
       "status": "active"
     },
     {
-      "id": 6,
+      "id": "6",
       "name": "Meera Nair",
       "phone": "+91-9000011122",
       "email": "meera.nair@example.com",
@@ -87,11 +80,11 @@
       "state_id": 32,
       "city_id": 106,
       "address": "Kakkanad, Kochi",
-      "role_id": "User",
+      "role_id": 2,
       "status": "active"
     },
     {
-      "id": 7,
+      "id": "7",
       "name": "Arjun Kapoor",
       "phone": "+91-9012345678",
       "email": "arjun.kapoor@example.com",
@@ -102,11 +95,11 @@
       "state_id": 27,
       "city_id": 107,
       "address": "Powai, Mumbai",
-      "role_id": "Admin",
+      "role_id": 1,
       "status": "inactive"
     },
     {
-      "id": 8,
+      "id": "8",
       "name": "Sana Khan",
       "phone": "+91-9101234567",
       "email": "sana.khan@example.com",
@@ -117,11 +110,11 @@
       "state_id": 23,
       "city_id": 108,
       "address": "MP Nagar, Bhopal",
-      "role_id": "Manager",
+      "role_id": 3,
       "status": "active"
     },
     {
-      "id": 9,
+      "id": "9",
       "name": "Rahul Yadav",
       "phone": "+91-9887766554",
       "email": "rahul.yadav@example.com",
@@ -132,23 +125,16 @@
       "state_id": 9,
       "city_id": 109,
       "address": "Gomti Nagar, Lucknow",
-      "role_id": "User",
+      "role_id": 2,
       "status": "active"
     },
     {
-      "id": 10,
-      "name": "Priya Desai",
-      "phone": "+91-9877012345",
-      "email": "priya.desai@example.com",
-      "profile_img": "https://i.pravatar.cc/150?img=20",
-      "password": "hashed_password_10",
-      "date_of_birth": "1998-02-27",
-      "country_id": 1,
-      "state_id": 30,
-      "city_id": 110,
-      "address": "Panaji, Goa",
-      "role_id": "User",
-      "status": "inactive"
+      "name": "Random Title",
+      "email": "random@gmail.com",
+      "phone": "+91-9876543210",
+      "role_id": 2,
+      "status": "active",
+      "id": "9ce1"
     }
   ]
 }

@@ -14,7 +14,7 @@ import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import usePageTitle from "../../hooks/usePageTitle";
 import { useDispatch, useSelector } from "react-redux";
-import { login } from "../../features/auth/authSlice";
+import { login } from "../../store/slice/auth/authSlice";
 
 const { Title } = Typography;
 
@@ -25,12 +25,14 @@ const Login = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const auth = useSelector((state) => state.auth);
-  // console.log("🔍 Auth State:", auth); 
+  // console.log("🔍 Auth State:", auth);
 
   const handleSubmit = async () => {
     try {
       const response = await fetch(
-        `http://localhost:4000/users?email=${encodeURIComponent(userEmail)}&password=${encodeURIComponent(userPassword)}`
+        `http://localhost:4000/users?email=${encodeURIComponent(
+          userEmail
+        )}&password=${encodeURIComponent(userPassword)}`
       );
 
       const users = await response.json();
@@ -38,14 +40,16 @@ const Login = () => {
       if (users.length === 1) {
         const user = users[0];
 
-        dispatch(login({
-          user:{
-            id:user.id,
-            name:user.name,
-            email:user.email,
-          },
-          token:`dummy-token-${user.id}`,
-        }))
+        dispatch(
+          login({
+            user: {
+              id: user.id,
+              name: user.name,
+              email: user.email,
+            },
+            token: `dummy-token-${user.id}`,
+          })
+        );
         toast.success("Login Successfull!");
         navigate("/");
       } else {

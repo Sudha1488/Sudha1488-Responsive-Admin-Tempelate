@@ -26,11 +26,20 @@ import {
 } from "@ant-design/icons";
 import colors from "../../../theme/color";
 import usePageTitle from "../../../hooks/usePageTitle";
+import { useDispatch, useSelector } from "react-redux";
+import {
+  fetchUsers,
+  addUser,
+  updateUser,
+  deleteUser,
+} from "../../../store/slice/users/usersSlice";
 
 const User = () => {
-  usePageTitle('User');
-  const [users, setUsers] = useState([]);
-  const [loading, setLoading] = useState(false);
+  usePageTitle("User");
+  const dispatch = useDispatch();
+
+  const users = useSelector((state) => state.users.users);
+  const loading = useSelector((state) => state.users.loading);
 
   const [drawerVisible, setDrawerVisible] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -40,23 +49,23 @@ const User = () => {
 
   const [form] = Form.useForm();
 
-  const fetchUsers = async () => {
-    try {
-      setLoading(true);
-      const res = await axios.get("http://localhost:4000/users");
-      setUsers(res.data);
-      console.log(res.data);
-    } catch (error) {
-      console.log(error);
-      toast.error("Error fetching data from server!");
-    } finally {
-      setLoading(false);
-    }
-  };
+  // const fetchUsers = async () => {
+  //   try {
+  //     setLoading(true);
+  //     const res = await axios.get("http://localhost:4000/users");
+  //     setUsers(res.data);
+  //     console.log(res.data);
+  //   } catch (error) {
+  //     console.log(error);
+  //     toast.error("Error fetching data from server!");
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
 
   useEffect(() => {
-    fetchUsers();
-  }, []);
+    dispatch(fetchUsers());
+  }, [dispatch]);
 
   const showDrawer = () => {
     form.resetFields();
@@ -77,17 +86,14 @@ const User = () => {
   const onFinish = async (values) => {
     try {
       if (isEditing && selectedUser) {
-        await axios.put(
-          `http://localhost:4000/users/${selectedUser.id}`,
-          values
-        );
+        await dispatch(updateUser({ id: selectedUser.id, user: values }));
         toast.success("User updated successfully");
       } else {
-        await axios.post("http://localhost:4000/users", values);
+        await dispatch(addUser(values));
         toast.success("User added successfully");
       }
       closeDrawer();
-      fetchUsers();
+      dispatch(fetchUsers());
     } catch (error) {
       toast.error("Failed to upload data");
     }
@@ -107,11 +113,11 @@ const User = () => {
     form.setFieldsValue(user);
   };
 
-  const deleteUser = async (id) => {
+  const handleDeleteUser = async (id) => {
     try {
-      await axios.delete(`http://localhost:4000/users/${id}`);
+      await dispatch(deleteUser(id));
       toast.success("User deleted successfully.");
-      fetchUsers();
+      dispatch(fetchUsers());
     } catch (error) {
       console.error("Error deleting user:", error);
       toast.error("Failed to delete user");
@@ -146,16 +152,16 @@ const User = () => {
         const roles = {
           1: "Admin",
           2: "User",
-          3: "Manager"
+          3: "Manager",
         };
         return roles[role_id] || "Unknown";
-      }
+      },
     },
     {
       title: "Status",
       dataIndex: "status",
       key: "status",
-      width: 120, 
+      width: 120,
       render: (status) => (
         <Tag color={status === "active" ? "green" : "red"}>
           {status?.toUpperCase()}
@@ -190,7 +196,7 @@ const User = () => {
             description="Are you sure to delete this user?"
             okText="Yes"
             cancelText="No"
-            onConfirm={() => deleteUser(record.id)}
+            onConfirm={() => handleDeleteUser(record.id)}
           >
             <Button
               icon={<DeleteOutlined />}
@@ -237,21 +243,21 @@ const User = () => {
           </h2>
 
           <Button
-              icon={<PlusOutlined />}
-              type="primary"
-              size="middle"
-              style={{
-                backgroundColor: colors.secondary,
-                border: "none",
-                padding: "0 16px",
-              }}
-              onClick={showDrawer}
-            >
-              Add User
-            </Button>
+            icon={<PlusOutlined />}
+            type="primary"
+            size="middle"
+            style={{
+              backgroundColor: colors.secondary,
+              border: "none",
+              padding: "0 16px",
+            }}
+            onClick={showDrawer}
+          >
+            Add User
+          </Button>
         </div>
       </div>
-      
+
       <div
         style={{
           backgroundColor: "#fff",
@@ -260,14 +266,20 @@ const User = () => {
           boxShadow: "0 4px 10px rgba(0,0,0,0.06)",
         }}
       >
-        <div style={{marginBottom:"16px", display: "flex", justifyContent:"flex-end" }}>
-            <Input.Search
-              placeholder="Search by name, email or phone"
-              allowClear
-              onChange={(e) => setSearchTerm(e.target.value.toLowerCase())}
-              style={{ width: 250 }}
-            />
-          </div>
+        <div
+          style={{
+            marginBottom: "16px",
+            display: "flex",
+            justifyContent: "flex-end",
+          }}
+        >
+          <Input.Search
+            placeholder="Search by name, email or phone"
+            allowClear
+            onChange={(e) => setSearchTerm(e.target.value.toLowerCase())}
+            style={{ width: 250 }}
+          />
+        </div>
         <div style={{ overflowX: "auto" }}>
           <Table
             dataSource={users.filter(
