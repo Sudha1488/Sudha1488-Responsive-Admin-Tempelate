@@ -1,7 +1,7 @@
 {
   "users": [
     {
-      "name": "Sudhanand ",
+      "name": "Sudhanand Tiwari",
       "email": "test@gmail.com",
       "phone": "+91-987654321010000",
       "role_id": 1,
@@ -69,19 +69,12 @@
       "status": "active"
     },
     {
-      "id": "6",
       "name": "Meera Nair",
-      "phone": "+91-9000011122",
       "email": "meera.nair@example.com",
-      "profile_img": "https://i.pravatar.cc/150?img=16",
-      "password": "hashed_password_6",
-      "date_of_birth": "1996-08-30",
-      "country_id": 1,
-      "state_id": 32,
-      "city_id": 106,
-      "address": "Kakkanad, Kochi",
+      "phone": "+91-9000011122",
       "role_id": 2,
-      "status": "active"
+      "status": "active",
+      "id": "6"
     },
     {
       "id": "7",
@@ -129,12 +122,20 @@
       "status": "active"
     },
     {
-      "name": "Random Title",
+      "name": "Random ",
       "email": "random@gmail.com",
-      "phone": "+91-9876543210",
+      "phone": "+91-9123456780",
       "role_id": 2,
-      "status": "active",
-      "id": "9ce1"
+      "status": "inactive",
+      "id": "4718"
+    },
+    {
+      "id": "1d98",
+      "name": "Anu Tiwari",
+      "email": "anu.1234@gmail.com",
+      "phone": "9608329231",
+      "role_id": 2,
+      "status": "active"
     }
   ]
 }

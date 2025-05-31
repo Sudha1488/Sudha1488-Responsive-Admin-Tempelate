@@ -139,8 +139,8 @@ const Sidebar = ({ collapsed, isMobile, closeSidebar }) => {
         </Menu.Item> */}
 
         <Menu.SubMenu key="/access" icon={<KeyOutlined />} title="Access">
-          <Menu.Item key="/access/user" icon={<UserOutlined />}>
-            <Link to="/access/user" onClick={handleClick}>User</Link>
+          <Menu.Item key="/access/users" icon={<UserOutlined />}>
+            <Link to="/access/users" onClick={handleClick}>Users</Link>
           </Menu.Item>
           <Menu.Item key="/access/roles" icon={<UserAddOutlined />}>
             <Link to="/access/roles" onClick={handleClick}>Roles</Link>

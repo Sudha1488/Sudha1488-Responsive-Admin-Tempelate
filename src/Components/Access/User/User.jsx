@@ -17,7 +17,7 @@ const { Option } = Select;
 import axios from "axios";
 import React, { useEffect, useState } from "react";
 import toast from "react-hot-toast";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import {
   EyeOutlined,
   EditOutlined,
@@ -37,6 +37,8 @@ import {
 const User = () => {
   usePageTitle("User");
   const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const { action, id } = useParams();
 
   const users = useSelector((state) => state.users.users);
   const loading = useSelector((state) => state.users.loading);
@@ -49,23 +51,33 @@ const User = () => {
 
   const [form] = Form.useForm();
 
-  // const fetchUsers = async () => {
-  //   try {
-  //     setLoading(true);
-  //     const res = await axios.get("http://localhost:4000/users");
-  //     setUsers(res.data);
-  //     console.log(res.data);
-  //   } catch (error) {
-  //     console.log(error);
-  //     toast.error("Error fetching data from server!");
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
-
   useEffect(() => {
     dispatch(fetchUsers());
   }, [dispatch]);
+
+  useEffect(() => {
+    if ((action === "edit" || action === "view") && id && users.length === 0) {
+      dispatch(fetchUsers());
+      return;
+    }                                    
+    if (action) {
+      if (action === "add") {
+        showDrawer();
+      } else if (action === "edit" && id && users.length > 0) {
+        const user = users.find((u) => u.id.toString() === id);
+        if (user) {
+          openEditDrawer(user);
+        }
+      } else if (action === "view" && id && users.length > 0) {
+        const user = users.find((u) => u.id.toString() === id);
+        if (user) {
+          viewUser(user);
+        }
+      }
+    } else {
+      setDrawerVisible(false);
+    }
+  }, [action, id]);
 
   const showDrawer = () => {
     form.resetFields();
@@ -73,6 +85,7 @@ const User = () => {
     setSelectedUser(null);
     setViewMode(false);
     setDrawerVisible(true);
+    navigate("/access/users/add");
   };
 
   const closeDrawer = () => {
@@ -81,6 +94,7 @@ const User = () => {
     setSelectedUser(null);
     setViewMode(false);
     form.resetFields();
+    navigate("/access/users");
   };
 
   const onFinish = async (values) => {
@@ -102,15 +116,19 @@ const User = () => {
   const openEditDrawer = (user) => {
     setSelectedUser(user);
     setIsEditing(true);
+    setViewMode(false);
     setDrawerVisible(true);
     form.setFieldsValue(user);
+    navigate(`/access/users/edit/${user.id}`);
   };
 
   const viewUser = (user) => {
     setSelectedUser(user);
     setViewMode(true);
+    setIsEditing(false);
     setDrawerVisible(true);
     form.setFieldsValue(user);
+    navigate(`/access/users/view/${user.id}`);
   };
 
   const handleDeleteUser = async (id) => {
