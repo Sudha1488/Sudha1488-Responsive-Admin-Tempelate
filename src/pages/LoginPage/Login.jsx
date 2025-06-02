@@ -1,15 +1,13 @@
 import React, { useState } from "react";
-import { Form, Input, Button, Checkbox, Typography, Card, message } from "antd";
+import { Form, Input, Button, Typography, Card, message } from "antd";
 import {
   UserOutlined,
   ArrowRightOutlined,
-  LockFilled,
   LockOutlined,
 } from "@ant-design/icons";
 import "./Login.css";
 
 import colors from "../../theme/color";
-import Password from "antd/es/input/Password";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import usePageTitle from "../../hooks/usePageTitle";
@@ -18,48 +16,86 @@ import { login } from "../../store/slice/auth/authSlice";
 
 const { Title } = Typography;
 
+const BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
 const Login = () => {
   usePageTitle("Login");
-  const [userEmail, setEmail] = useState("");
-  const [userPassword, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const auth = useSelector((state) => state.auth);
-  // console.log("🔍 Auth State:", auth);
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (values) => {
+    setLoading(true);
     try {
-      const response = await fetch(
-        `http://localhost:4000/users?email=${encodeURIComponent(
-          userEmail
-        )}&password=${encodeURIComponent(userPassword)}`
-      );
+      const response = await fetch(`${BASE_URL}/admin/auth/signin`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: values.email,
+          password: values.password,
+        }),
+      });
 
-      const users = await response.json();
+      const data = await response.json();
 
-      if (users.length === 1) {
-        const user = users[0];
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
 
+      if (response.ok) {
+        const token = data.data.token;
+        console.log("Token", token)
+        const permissionsResponse = await fetch(
+          `${BASE_URL}/admin/auth/get-permissions`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        let permissions = [];
+        if (permissionsResponse.ok) {
+          const permissionsData = await permissionsResponse.json();
+          permissions = permissionsData.permissions || permissionsData;
+        } else {
+          console.error(
+            "Failed to fetch permissions:",
+            permissionsResponse.status
+          );
+          toast.error("Login failed. Please try again.");
+          return;
+        }
         dispatch(
           login({
             user: {
-              id: user.id,
-              name: user.name,
-              email: user.email,
+              id: data.user?.id || data.id,
+              name: data.user?.name || data.name,
+              email: data.user?.email || data.email,
+              permissions: permissions,
             },
-            token: `dummy-token-${user.id}`,
+            token: token,
           })
         );
-        toast.success("Login Successfull!");
+
+        toast.success("Login Successful!");
         navigate("/");
       } else {
-        toast.error("Invalid Email or Passwrod");
+        toast.error(data.message || "Invalid Email or Password");
       }
     } catch (error) {
       console.error(error);
       message.error("Something went wrong. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
+
   return (
     <div className="login-page">
       <div className="login-wrapper">
@@ -84,16 +120,15 @@ const Login = () => {
             onFinish={handleSubmit}
           >
             <Form.Item
-              name="username"
+              name="email"
               rules={[
-                { required: true, message: "Please input your username!" },
+                { required: true, message: "Please input your email!" },
+                { type: "email", message: "Please enter a valid email!" },
               ]}
             >
               <Input
                 size="large"
                 placeholder="Email"
-                value={userEmail}
-                onChange={(e) => setEmail(e.target.value)}
                 prefix={<UserOutlined style={{ color: "#000" }} />}
               />
             </Form.Item>
@@ -106,8 +141,6 @@ const Login = () => {
               <Input.Password
                 size="large"
                 placeholder="Password"
-                value={userPassword}
-                onChange={(e) => setPassword(e.target.value)}
                 prefix={<LockOutlined style={{ color: "#000" }} />}
               />
             </Form.Item>
@@ -123,6 +156,7 @@ const Login = () => {
                 shape="round"
                 icon={<ArrowRightOutlined />}
                 size="large"
+                loading={loading}
                 style={{ backgroundColor: colors.primary }}
                 className="login-button"
               />

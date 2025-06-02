@@ -11,6 +11,7 @@ import {
   Row,
   Col,
   Popconfirm,
+  Upload,
 } from "antd";
 const { Option } = Select;
 
@@ -23,6 +24,7 @@ import {
   EditOutlined,
   DeleteOutlined,
   PlusOutlined,
+  UploadOutlined,
 } from "@ant-design/icons";
 import colors from "../../../theme/color";
 import usePageTitle from "../../../hooks/usePageTitle";
@@ -48,6 +50,7 @@ const User = () => {
   const [selectedUser, setSelectedUser] = useState(null);
   const [viewMode, setViewMode] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [fileList, setFileList] = useState([]);
 
   const [form] = Form.useForm();
 
@@ -59,7 +62,7 @@ const User = () => {
     if ((action === "edit" || action === "view") && id && users.length === 0) {
       dispatch(fetchUsers());
       return;
-    }                                    
+    }
     if (action) {
       if (action === "add") {
         showDrawer();
@@ -84,6 +87,7 @@ const User = () => {
     setIsEditing(false);
     setSelectedUser(null);
     setViewMode(false);
+    setFileList([]);
     setDrawerVisible(true);
     navigate("/access/users/add");
   };
@@ -93,17 +97,29 @@ const User = () => {
     setIsEditing(false);
     setSelectedUser(null);
     setViewMode(false);
+    setFileList([]);
     form.resetFields();
     navigate("/access/users");
   };
 
   const onFinish = async (values) => {
     try {
+      const formData = new FormData();
+      Object.keys(values).forEach(key => {
+        if (key !== 'profile_img') {
+          formData.append(key, values[key]);
+        }
+      });
+      
+      if (fileList.length > 0 && fileList[0].originFileObj) {
+        formData.append('profile_img', fileList[0].originFileObj);
+      }
+
       if (isEditing && selectedUser) {
-        await dispatch(updateUser({ id: selectedUser.id, user: values }));
+        await dispatch(updateUser({ id: selectedUser.id, user: formData }));
         toast.success("User updated successfully");
       } else {
-        await dispatch(addUser(values));
+        await dispatch(addUser(formData));
         toast.success("User added successfully");
       }
       closeDrawer();
@@ -119,6 +135,16 @@ const User = () => {
     setViewMode(false);
     setDrawerVisible(true);
     form.setFieldsValue(user);
+    
+    if (user.profile_img) {
+      setFileList([{
+        uid: '-1',
+        name: 'profile_img',
+        status: 'done',
+        url: user.profile_img,
+      }]);
+    }
+    
     navigate(`/access/users/edit/${user.id}`);
   };
 
@@ -128,6 +154,17 @@ const User = () => {
     setIsEditing(false);
     setDrawerVisible(true);
     form.setFieldsValue(user);
+    
+ 
+    if (user.profile_img) {
+      setFileList([{
+        uid: '-1',
+        name: 'profile_img',
+        status: 'done',
+        url: user.profile_img,
+      }]);
+    }
+    
     navigate(`/access/users/view/${user.id}`);
   };
 
@@ -140,6 +177,24 @@ const User = () => {
       console.error("Error deleting user:", error);
       toast.error("Failed to delete user");
     }
+  };
+
+  const handleFileChange = ({ fileList: newFileList }) => {
+    setFileList(newFileList);
+  };
+
+  const beforeUpload = (file) => {
+    const isImage = file.type.startsWith('image/');
+    if (!isImage) {
+      message.error('You can only upload image files!');
+      return false;
+    }
+    const isLt2M = file.size / 1024 / 1024 < 2;
+    if (!isLt2M) {
+      message.error('Image must be smaller than 2MB!');
+      return false;
+    }
+    return false;
   };
 
   const columns = [
@@ -180,11 +235,15 @@ const User = () => {
       dataIndex: "status",
       key: "status",
       width: 120,
-      render: (status) => (
-        <Tag color={status === "active" ? "green" : "red"}>
-          {status?.toUpperCase()}
-        </Tag>
-      ),
+
+      render: (status) => {
+        const isActive = status === 1 || status === true;
+        return (
+          <Tag color={isActive ? "green" : "red"}>
+            {isActive ? "ACTIVE" : "INACTIVE"}
+          </Tag>
+        );
+      },
     },
     {
       title: "Actions",
@@ -327,7 +386,7 @@ const User = () => {
             {viewMode ? "View User" : isEditing ? "Edit User" : "Add New User"}
           </div>
         }
-        width={360}
+        width={400}
         onClose={closeDrawer}
         open={drawerVisible}
         bodyStyle={{ paddingBottom: 80 }}
@@ -371,6 +430,77 @@ const User = () => {
             rules={[{ required: true, message: "Please enter the phone no." }]}
           >
             <Input placeholder="Enter phone number" disabled={viewMode} />
+          </Form.Item>
+
+          <Form.Item
+            name="profile_img"
+            label="Profile Image"
+          >
+            <Upload
+              fileList={fileList}
+              onChange={handleFileChange}
+              beforeUpload={beforeUpload}
+              maxCount={1}
+              accept="image/*"
+              disabled={viewMode}
+            >
+              {!viewMode && (
+                <Button icon={<UploadOutlined />}>Upload Profile Image</Button>
+              )}
+            </Upload>
+          </Form.Item>
+
+          {!isEditing && (
+            <Form.Item
+              name="password"
+              label="Password"
+              rules={[{ required: true, message: "Please enter the password" }]}
+            >
+              <Input.Password placeholder="Enter password" disabled={viewMode} />
+            </Form.Item>
+          )}
+
+          <Form.Item
+            name="date_of_birth"
+            label="Date of Birth"
+          >
+            <Input 
+              type="date" 
+              placeholder="Select date of birth" 
+              disabled={viewMode} 
+            />
+          </Form.Item>
+
+          <Form.Item
+            name="country_id"
+            label="Country"
+          >
+            <Input placeholder="Enter country" disabled={viewMode} />
+          </Form.Item>
+
+          <Form.Item
+            name="state_id"
+            label="State"
+          >
+            <Input placeholder="Enter state" disabled={viewMode} />
+          </Form.Item>
+
+          <Form.Item
+            name="city_id"
+            label="City"
+          >
+            <Input placeholder="Enter city" disabled={viewMode} />
+          </Form.Item>
+
+          <Form.Item
+            name="address"
+            label="Address"
+          >
+            <Input.TextArea 
+              rows={3}
+              placeholder="Enter full address" 
+              disabled={viewMode} 
+            />
           </Form.Item>
 
           <Form.Item
