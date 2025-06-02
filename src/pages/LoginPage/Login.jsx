@@ -83,8 +83,8 @@ const Login = () => {
           })
         );
 
-        toast.success("Login Successful!");
         navigate("/");
+        toast.success("Login Successful!");
       } else {
         toast.error(data.message || "Invalid Email or Password");
       }

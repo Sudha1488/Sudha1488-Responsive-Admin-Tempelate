@@ -5,27 +5,21 @@ export const fetchUsers = createAsyncThunk(
   "users/fetchUsers",
   async (_, { rejectWithValue, getState }) => {
     try {
-      const token = getState().auth.token;  
-
+      const token = getState().auth.token;
       const res = await API.get("/admin/users/list", {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
 
-      if (res.data && res.data.data && Array.isArray(res.data.data.data)) {
+      if (res.data?.data?.data && Array.isArray(res.data.data.data)) {
         return res.data.data.data;
       }
-
       return [];
     } catch (err) {
-      console.error("fetchUsers error:", err);
-
-      return rejectWithValue({
-        message: err.response?.data?.message || err.message || "Failed to fetch users",
-        status: err.response?.status,
-        data: err.response?.data,
-      });
+      return rejectWithValue(
+        err.response?.data?.message || err.message || "Failed to fetch users"
+      );
     }
   }
 );
@@ -35,89 +29,91 @@ export const fetchUserById = createAsyncThunk(
   async (id, { rejectWithValue, getState }) => {
     try {
       const token = getState().auth.token;
-
       const res = await API.get(`/admin/users/by-id/${id}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
 
-      if (res.data && res.data.data) {
+      if (res.data?.data) {
         return res.data.data;
       }
-
       return null;
     } catch (err) {
-      console.error("fetchUserById error:", err);
-
-      return rejectWithValue({
-        message: err.response?.data?.message || err.message || "Failed to fetch user",
-        status: err.response?.status,
-        data: err.response?.data,
-      });
+      return rejectWithValue(
+        err.response?.data?.message || err.message || "Failed to fetch user"
+      );
     }
   }
 );
 
 export const addUser = createAsyncThunk(
-  "users/addUser", 
-  async (user, { rejectWithValue }) => {
+  "users/addUser",
+  async (userData, { rejectWithValue, getState }) => {
     try {
       const token = getState().auth.token;
-      const response = await API.post("/admin/users/add", user,{
+      const response = await API.post("/admin/users/add", userData, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
+
+      if (response.data?.data) {
+        return response.data.data;
+      }
       return response.data;
     } catch (err) {
-      return rejectWithValue({
-        message: err.response?.data?.message || err.message || "Failed to add user",
-        status: err.response?.status,
-        data: err.response?.data
-      });
+      const errorMessage =
+        err.response?.data?.message ||
+        err.response?.data?.error ||
+        err.message ||
+        "Failed to add user";
+      return rejectWithValue(errorMessage);
     }
   }
 );
 
 export const updateUser = createAsyncThunk(
   "users/updateUser",
-  async ({ id, user }, { rejectWithValue }) => {
+  async ({ id, userFormData }, { rejectWithValue, getState }) => { 
     try {
       const token = getState().auth.token;
-      const response = await API.put(`/admin/users/${id}`, user,{
+
+
+
+      const response = await API.put(`/admin/users/update/${id}`, userFormData, { 
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
+
+      if (response.data && response.data.data) {
+        return response.data.data;
+      }
       return response.data;
     } catch (err) {
-      return rejectWithValue({
-        message: err.response?.data?.message || err.message || "Failed to update user",
-        status: err.response?.status,
-        data: err.response?.data
-      });
+      const errorMessage =
+        err.response?.data?.message || err.response?.data?.error || err.message || "Failed to update user";
+      return rejectWithValue(errorMessage);
     }
   }
 );
 
 export const deleteUser = createAsyncThunk(
-  "users/deleteUser", 
-  async (id, { rejectWithValue }) => {
+  "users/deleteUser",
+  async (id, { rejectWithValue, getState }) => {
     try {
       const token = getState().auth.token;
-      await API.delete(`/admin/users/${id}`,{
+      await API.delete(`/admin/users/delete/${id}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
       return id;
     } catch (err) {
-      return rejectWithValue({
-        message: err.response?.data?.message || err.message || "Failed to delete user",
-        status: err.response?.status,
-        data: err.response?.data
-      });
+      return rejectWithValue(
+        err.response?.data?.message || err.message || "Failed to delete user"
+      );
     }
   }
 );
@@ -139,7 +135,8 @@ const usersSlice = createSlice({
     },
     clearSelectedUser: (state) => {
       state.selectedUser = null;
-    }
+      state.userLoading = false;
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -154,11 +151,11 @@ const usersSlice = createSlice({
       })
       .addCase(fetchUsers.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.payload?.message || action.error.message;
+        state.error = action.payload || action.error.message;
       })
-
       .addCase(fetchUserById.pending, (state) => {
         state.userLoading = true;
+        state.selectedUser = null;
         state.error = null;
       })
       .addCase(fetchUserById.fulfilled, (state, action) => {
@@ -168,9 +165,9 @@ const usersSlice = createSlice({
       })
       .addCase(fetchUserById.rejected, (state, action) => {
         state.userLoading = false;
-        state.error = action.payload?.message || action.error.message;
+        state.selectedUser = null;
+        state.error = action.payload || action.error.message;
       })
-
       .addCase(addUser.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -182,28 +179,28 @@ const usersSlice = createSlice({
       })
       .addCase(addUser.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.payload?.message || action.error.message;
+        state.error = action.payload || action.error.message;
       })
-
       .addCase(updateUser.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
       .addCase(updateUser.fulfilled, (state, action) => {
         state.loading = false;
+        const updatedUser = action.payload;
         const index = state.users.findIndex(
-          (user) => user.id === action.payload.id
+          (user) => user.id === updatedUser.id
         );
         if (index !== -1) {
-          state.users[index] = action.payload;
+          state.users[index] = updatedUser;
         }
         state.error = null;
+        state.selectedUser = updatedUser;
       })
       .addCase(updateUser.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.payload?.message || action.error.message;
+        state.error = action.payload || action.error.message;
       })
-
       .addCase(deleteUser.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -215,7 +212,7 @@ const usersSlice = createSlice({
       })
       .addCase(deleteUser.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.payload?.message || action.error.message;
+        state.error = action.payload || action.error.message;
       });
   },
 });

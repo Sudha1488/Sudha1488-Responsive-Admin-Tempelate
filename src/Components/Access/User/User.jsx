@@ -15,7 +15,6 @@ import {
 } from "antd";
 const { Option } = Select;
 
-import axios from "axios";
 import React, { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { useNavigate, useParams } from "react-router-dom";
@@ -24,7 +23,6 @@ import {
   EditOutlined,
   DeleteOutlined,
   PlusOutlined,
-  UploadOutlined,
 } from "@ant-design/icons";
 import colors from "../../../theme/color";
 import usePageTitle from "../../../hooks/usePageTitle";
@@ -34,7 +32,11 @@ import {
   addUser,
   updateUser,
   deleteUser,
+  fetchUserById,
+  clearSelectedUser,
 } from "../../../store/slice/users/usersSlice";
+
+import UserViewDetails from './UserViewDetails'; 
 
 const User = () => {
   usePageTitle("User");
@@ -43,11 +45,13 @@ const User = () => {
   const { action, id } = useParams();
 
   const users = useSelector((state) => state.users.users);
+  const selectedUserFromStore = useSelector((state) => state.users.selectedUser);
   const loading = useSelector((state) => state.users.loading);
+  const userLoading = useSelector((state) => state.users.userLoading);
+  const error = useSelector((state) => state.users.error);
 
   const [drawerVisible, setDrawerVisible] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  const [selectedUser, setSelectedUser] = useState(null);
   const [viewMode, setViewMode] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [fileList, setFileList] = useState([]);
@@ -59,123 +63,124 @@ const User = () => {
   }, [dispatch]);
 
   useEffect(() => {
-    if ((action === "edit" || action === "view") && id && users.length === 0) {
-      dispatch(fetchUsers());
-      return;
-    }
-    if (action) {
-      if (action === "add") {
-        showDrawer();
-      } else if (action === "edit" && id && users.length > 0) {
-        const user = users.find((u) => u.id.toString() === id);
-        if (user) {
-          openEditDrawer(user);
-        }
-      } else if (action === "view" && id && users.length > 0) {
-        const user = users.find((u) => u.id.toString() === id);
-        if (user) {
-          viewUser(user);
-        }
-      }
+    if (action === "add") {
+      showDrawer();
+    } else if ((action === "edit" || action === "view") && id) {
+      dispatch(fetchUserById(id));
+      setDrawerVisible(true);
+      setViewMode(action === "view");
+      setIsEditing(action === "edit");
     } else {
-      setDrawerVisible(false);
+      if (drawerVisible) {
+        closeDrawer();
+      }
     }
-  }, [action, id]);
+  }, [action, id, dispatch]);
+
+  useEffect(() => {
+    if (selectedUserFromStore) {
+      form.setFieldsValue({
+        ...selectedUserFromStore,
+        status: selectedUserFromStore.status === 1 || selectedUserFromStore.status === true ? "active" : "inactive",
+        role_id: Number(selectedUserFromStore.role_id), 
+      });
+
+      if (selectedUserFromStore.profileImg) {
+        setFileList([
+          {
+            uid: "-1",
+            name: "profile_img",
+            status: "done",
+            url: selectedUserFromStore.profileImg,
+          },
+        ]);
+      } else {
+        setFileList([]);
+      }
+    } else if ((action === "edit" || action === "view") && !userLoading) {
+    }
+  }, [selectedUserFromStore, form, action, userLoading]);
+
+  useEffect(() => {
+    if (error) {
+      toast.error(error);
+    }
+  }, [error]);
 
   const showDrawer = () => {
     form.resetFields();
     setIsEditing(false);
-    setSelectedUser(null);
     setViewMode(false);
     setFileList([]);
     setDrawerVisible(true);
+    dispatch(clearSelectedUser());
     navigate("/access/users/add");
   };
 
   const closeDrawer = () => {
     setDrawerVisible(false);
     setIsEditing(false);
-    setSelectedUser(null);
     setViewMode(false);
     setFileList([]);
     form.resetFields();
+    dispatch(clearSelectedUser());
     navigate("/access/users");
   };
 
   const onFinish = async (values) => {
     try {
       const formData = new FormData();
-      Object.keys(values).forEach(key => {
-        if (key !== 'profile_img') {
-          formData.append(key, values[key]);
+
+      const processedValues = {
+        ...values,
+        status: values.status === "active" ? "1" : "0",
+        role_id: String(values.role_id),
+      };
+
+      Object.keys(processedValues).forEach((key) => {
+        if (key !== "profile_img" && processedValues[key] !== undefined && processedValues[key] !== null) {
+          formData.append(key, String(processedValues[key]));
         }
       });
-      
+
       if (fileList.length > 0 && fileList[0].originFileObj) {
-        formData.append('profile_img', fileList[0].originFileObj);
-      }
+        formData.append("profile_img", fileList[0].o);
+      } 
 
-      if (isEditing && selectedUser) {
-        await dispatch(updateUser({ id: selectedUser.id, user: formData }));
-        toast.success("User updated successfully");
+      if (isEditing && selectedUserFromStore) {
+        const resultAction = await dispatch(updateUser({ id: selectedUserFromStore.id, user: formData }));
+        if (updateUser.fulfilled.match(resultAction)) {
+          toast.success("User updated successfully");
+          closeDrawer();
+          dispatch(fetchUsers());
+        } else {
+          toast.error(resultAction.payload?.message || "Failed to update user");
+        }
       } else {
-        await dispatch(addUser(formData));
-        toast.success("User added successfully");
+        const resultAction = await dispatch(addUser(formData));
+        if (addUser.fulfilled.match(resultAction)) {
+          toast.success("User added successfully");
+          closeDrawer();
+          dispatch(fetchUsers());
+        } else {
+          toast.error(resultAction.payload?.message || "Failed to add user");
+        }
       }
-      closeDrawer();
-      dispatch(fetchUsers());
     } catch (error) {
-      toast.error("Failed to upload data");
+      toast.error("An unexpected error occurred during form submission.");
     }
-  };
-
-  const openEditDrawer = (user) => {
-    setSelectedUser(user);
-    setIsEditing(true);
-    setViewMode(false);
-    setDrawerVisible(true);
-    form.setFieldsValue(user);
-    
-    if (user.profile_img) {
-      setFileList([{
-        uid: '-1',
-        name: 'profile_img',
-        status: 'done',
-        url: user.profile_img,
-      }]);
-    }
-    
-    navigate(`/access/users/edit/${user.id}`);
-  };
-
-  const viewUser = (user) => {
-    setSelectedUser(user);
-    setViewMode(true);
-    setIsEditing(false);
-    setDrawerVisible(true);
-    form.setFieldsValue(user);
-    
- 
-    if (user.profile_img) {
-      setFileList([{
-        uid: '-1',
-        name: 'profile_img',
-        status: 'done',
-        url: user.profile_img,
-      }]);
-    }
-    
-    navigate(`/access/users/view/${user.id}`);
   };
 
   const handleDeleteUser = async (id) => {
     try {
-      await dispatch(deleteUser(id));
-      toast.success("User deleted successfully.");
-      dispatch(fetchUsers());
+      const resultAction = await dispatch(deleteUser(id));
+      if (deleteUser.fulfilled.match(resultAction)) {
+        toast.success("User deleted successfully.");
+      } else {
+        toast.error(resultAction.payload?.message || "Failed to delete user");
+      }
     } catch (error) {
-      console.error("Error deleting user:", error);
-      toast.error("Failed to delete user");
+      toast.error("An unexpected error occurred during deletion.");
     }
   };
 
@@ -184,15 +189,15 @@ const User = () => {
   };
 
   const beforeUpload = (file) => {
-    const isImage = file.type.startsWith('image/');
+    const isImage = file.type.startsWith("image/");
     if (!isImage) {
-      message.error('You can only upload image files!');
-      return false;
+      message.error("You can only upload image files!");
+      return Upload.LIST_IGNORE;
     }
     const isLt2M = file.size / 1024 / 1024 < 2;
     if (!isLt2M) {
-      message.error('Image must be smaller than 2MB!');
-      return false;
+      message.error("Image must be smaller than 2MB!");
+      return Upload.LIST_IGNORE;
     }
     return false;
   };
@@ -203,12 +208,14 @@ const User = () => {
       dataIndex: "name",
       key: "name",
       width: 150,
+      sorter: (a, b) => a.name.localeCompare(b.name),
     },
     {
       title: "Email",
       dataIndex: "email",
       key: "email",
       width: 220,
+      sorter: (a, b) => a.email.localeCompare(b.email),
     },
     {
       title: "Phone",
@@ -229,13 +236,13 @@ const User = () => {
         };
         return roles[role_id] || "Unknown";
       },
+      sorter: (a, b) => a.role_id - b.role_id,
     },
     {
       title: "Status",
       dataIndex: "status",
       key: "status",
       width: 120,
-
       render: (status) => {
         const isActive = status === 1 || status === true;
         return (
@@ -244,6 +251,7 @@ const User = () => {
           </Tag>
         );
       },
+      sorter: (a, b) => a.status - b.status,
     },
     {
       title: "Actions",
@@ -254,7 +262,7 @@ const User = () => {
         <Space>
           <Button
             icon={<EyeOutlined />}
-            onClick={() => viewUser(record)}
+            onClick={() => navigate(`/access/users/view/${record.id}`)}
             style={{
               backgroundColor: colors.buttonPrimaryBg,
               color: colors.buttonText,
@@ -262,7 +270,7 @@ const User = () => {
           />
           <Button
             icon={<EditOutlined />}
-            onClick={() => openEditDrawer(record)}
+            onClick={() => navigate(`/access/users/edit/${record.id}`)}
             style={{
               backgroundColor: colors.buttonEditBg,
               color: colors.buttonText,
@@ -287,6 +295,13 @@ const User = () => {
       ),
     },
   ];
+
+  const filteredUsers = users.filter(
+    (user) =>
+      user.name?.toLowerCase().includes(searchTerm) ||
+      user.email?.toLowerCase().includes(searchTerm) ||
+      user.phone?.toLowerCase().includes(searchTerm)
+  );
 
   return (
     <div>
@@ -359,12 +374,7 @@ const User = () => {
         </div>
         <div style={{ overflowX: "auto" }}>
           <Table
-            dataSource={users.filter(
-              (user) =>
-                user.name?.toLowerCase().includes(searchTerm) ||
-                user.email?.toLowerCase().includes(searchTerm) ||
-                user.phone?.toLowerCase().includes(searchTerm)
-            )}
+            dataSource={filteredUsers}
             columns={columns}
             loading={loading}
             rowKey="id"
@@ -386,173 +396,172 @@ const User = () => {
             {viewMode ? "View User" : isEditing ? "Edit User" : "Add New User"}
           </div>
         }
-        width={400}
+        width={800}
         onClose={closeDrawer}
         open={drawerVisible}
         bodyStyle={{ paddingBottom: 80 }}
-        destroyOnClose
+        destroyOnClose={true}
         headerStyle={{
           backgroundColor: colors.secondary,
           borderBottom: "1px solid #444",
         }}
       >
-        <Form
-          form={form}
-          layout="vertical"
-          onFinish={onFinish}
-          initialValues={{
-            status: "active",
-            role_id: 2,
-          }}
-        >
-          <Form.Item
-            name="name"
-            label="Name"
-            rules={[{ required: true, message: "Please enter the name" }]}
-          >
-            <Input placeholder="Enter full name" disabled={viewMode} />
-          </Form.Item>
-
-          <Form.Item
-            name="email"
-            label="Email"
-            rules={[
-              { required: true, message: "Please enter the email" },
-              { type: "email", message: "Please enter a valid email" },
-            ]}
-          >
-            <Input placeholder="Enter email" disabled={viewMode} />
-          </Form.Item>
-
-          <Form.Item
-            name="phone"
-            label="Phone"
-            rules={[{ required: true, message: "Please enter the phone no." }]}
-          >
-            <Input placeholder="Enter phone number" disabled={viewMode} />
-          </Form.Item>
-
-          <Form.Item
-            name="profile_img"
-            label="Profile Image"
-          >
-            <Upload
-              fileList={fileList}
-              onChange={handleFileChange}
-              beforeUpload={beforeUpload}
-              maxCount={1}
-              accept="image/*"
-              disabled={viewMode}
+        {userLoading ? (
+          <div style={{ textAlign: 'center', padding: '50px' }}>
+            <p>Loading user data...</p>
+          </div>
+        ) : viewMode && selectedUserFromStore ? (
+          <UserViewDetails user={selectedUserFromStore} />
+        ) : (
+          (action === "add" || selectedUserFromStore) ? (
+            <Form
+              form={form}
+              layout="vertical"
+              onFinish={onFinish}
+              initialValues={{
+                status: "active",
+                role_id: 2,
+              }}
             >
-              {!viewMode && (
-                <Button icon={<UploadOutlined />}>Upload Profile Image</Button>
-              )}
-            </Upload>
-          </Form.Item>
-
-          {!isEditing && (
-            <Form.Item
-              name="password"
-              label="Password"
-              rules={[{ required: true, message: "Please enter the password" }]}
-            >
-              <Input.Password placeholder="Enter password" disabled={viewMode} />
-            </Form.Item>
-          )}
-
-          <Form.Item
-            name="date_of_birth"
-            label="Date of Birth"
-          >
-            <Input 
-              type="date" 
-              placeholder="Select date of birth" 
-              disabled={viewMode} 
-            />
-          </Form.Item>
-
-          <Form.Item
-            name="country_id"
-            label="Country"
-          >
-            <Input placeholder="Enter country" disabled={viewMode} />
-          </Form.Item>
-
-          <Form.Item
-            name="state_id"
-            label="State"
-          >
-            <Input placeholder="Enter state" disabled={viewMode} />
-          </Form.Item>
-
-          <Form.Item
-            name="city_id"
-            label="City"
-          >
-            <Input placeholder="Enter city" disabled={viewMode} />
-          </Form.Item>
-
-          <Form.Item
-            name="address"
-            label="Address"
-          >
-            <Input.TextArea 
-              rows={3}
-              placeholder="Enter full address" 
-              disabled={viewMode} 
-            />
-          </Form.Item>
-
-          <Form.Item
-            name="role_id"
-            label="Role"
-            rules={[{ required: true, message: "Please select a role" }]}
-          >
-            <Select disabled={viewMode}>
-              <Option value={1}>Admin</Option>
-              <Option value={2}>User</Option>
-              <Option value={3}>Manager</Option>
-            </Select>
-          </Form.Item>
-
-          <Form.Item
-            name="status"
-            label="Status"
-            rules={[{ required: true, message: "Please select status" }]}
-          >
-            <Select disabled={viewMode}>
-              <Option value="active">Active</Option>
-              <Option value="inactive">Inactive</Option>
-            </Select>
-          </Form.Item>
-
-          {!viewMode && (
-            <Form.Item>
-              <Row gutter={12}>
+              <Row gutter={16}>
                 <Col span={12}>
-                  <Button
-                    onClick={closeDrawer}
-                    style={{ width: "100%", backgroundColor: "#FFFFFF" }}
-                  >
-                    Cancel
-                  </Button>
+                  <Form.Item name="name" label="Name" rules={[{ required: true, message: "Please enter the name" }]}>
+                    <Input placeholder="Enter full name" disabled={viewMode} />
+                  </Form.Item>
                 </Col>
+
                 <Col span={12}>
-                  <Button
-                    type="primary"
-                    htmlType="submit"
-                    style={{
-                      width: "100%",
-                      backgroundColor: colors.secondary,
-                    }}
-                  >
-                    Submit
-                  </Button>
+                  <Form.Item name="email" label="Email" rules={[
+                    { required: true, message: "Please enter the email" },
+                    { type: "email", message: "Please enter a valid email" },
+                  ]}>
+                    <Input placeholder="Enter email" disabled={viewMode} />
+                  </Form.Item>
+                </Col>
+
+                <Col span={12}>
+                  <Form.Item name="phone" label="Phone" rules={[{ required: true, message: "Please enter the phone no." }]}>
+                    <Input placeholder="Enter phone number" disabled={viewMode} />
+                  </Form.Item>
+                </Col>
+
+                <Col span={12}>
+                  <Form.Item name="profile_img" label="Profile Image">
+                    <Upload
+                      fileList={fileList}
+                      onChange={handleFileChange}
+                      beforeUpload={beforeUpload}
+                      maxCount={1}
+                      accept="image/*"
+                      disabled={viewMode}
+                      listType="picture-card"
+                    >
+                      {!viewMode && fileList.length < 1 && (
+                        <div>
+                          <PlusOutlined />
+                          <div style={{ marginTop: 8 }}>Upload</div>
+                        </div>
+                      )}
+                    </Upload>
+                  </Form.Item>
+                </Col>
+
+                {!isEditing && (
+                  <Col span={12}>
+                    <Form.Item name="password" label="Password" rules={[{ required: true, message: "Please enter the password" }]}>
+                      <Input.Password placeholder="Enter password" disabled={viewMode} />
+                    </Form.Item>
+                  </Col>
+                )}
+
+                <Col span={12}>
+                  <Form.Item name="date_of_birth" label="Date of Birth">
+                    <Input type="date" placeholder="Select date of birth" disabled={viewMode} />
+                  </Form.Item>
+                </Col>
+
+                {action === "add" && (
+                  <>
+                    <Col span={12}>
+                      <Form.Item name="country_id" label="Country">
+                        <Input placeholder="Enter country" />
+                      </Form.Item>
+                    </Col>
+
+                    <Col span={12}>
+                      <Form.Item name="state_id" label="State">
+                        <Input placeholder="Enter state" />
+                      </Form.Item>
+                    </Col>
+
+                    <Col span={12}>
+                      <Form.Item name="city_id" label="City">
+                        <Input placeholder="Enter city" />
+                      </Form.Item>
+                    </Col>
+                  </>
+                )}
+
+                <Col span={12}>
+                  <Form.Item name="role_id" label="Role" rules={[{ required: true, message: "Please select a role" }]}>
+                    <Select disabled={viewMode}>
+                      <Option value={1}>Admin</Option>
+                      <Option value={2}>User</Option>
+                      <Option value={3}>Manager</Option>
+                    </Select>
+                  </Form.Item>
+                </Col>
+
+                <Col span={12}>
+                  <Form.Item name="status" label="Status" rules={[{ required: true, message: "Please select status" }]}>
+                    <Select disabled={viewMode}>
+                      <Option value="active">Active</Option>
+                      <Option value="inactive">Inactive</Option>
+                    </Select>
+                  </Form.Item>
+                </Col>
+
+                <Col span={24}>
+                  <Form.Item name="address" label="Address">
+                    <Input.TextArea rows={3} placeholder="Enter full address" disabled={viewMode} />
+                  </Form.Item>
                 </Col>
               </Row>
-            </Form.Item>
-          )}
-        </Form>
+
+              {!viewMode && (
+                <Form.Item>
+                  <Row gutter={12}>
+                    <Col span={12}>
+                      <Button
+                        onClick={closeDrawer}
+                        style={{ width: "100%", backgroundColor: "#FFFFFF" }}
+                      >
+                        Cancel
+                      </Button>
+                    </Col>
+                    <Col span={12}>
+                      <Button
+                        type="primary"
+                        htmlType="submit"
+                        loading={loading}
+                        style={{
+                          width: "100%",
+                          backgroundColor: colors.secondary,
+                        }}
+                      >
+                        Submit
+                      </Button>
+                    </Col>
+                  </Row>
+                </Form.Item>
+              )}
+            </Form>
+          ) : (
+            <div style={{ textAlign: 'center', padding: '50px' }}>
+              <p>User data not found.</p>
+            </div>
+          )
+        )}
       </Drawer>
     </div>
   );
