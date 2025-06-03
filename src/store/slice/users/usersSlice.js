@@ -79,8 +79,6 @@ export const updateUser = createAsyncThunk(
     try {
       const token = getState().auth.token;
 
-
-
       const response = await API.put(`/admin/users/update/${id}`, userFormData, { 
         headers: {
           Authorization: `Bearer ${token}`,
@@ -114,6 +112,34 @@ export const deleteUser = createAsyncThunk(
       return rejectWithValue(
         err.response?.data?.message || err.message || "Failed to delete user"
       );
+    }
+  }
+);
+
+// usersSlice.js
+
+export const updateStatus = createAsyncThunk(
+  "users/updateUserStatus",
+  async ({ id, status }, { rejectWithValue, getState }) => {
+    try {
+      const token = getState().auth.token;
+      const response = await API.patch(`/admin/users/status/${id}`, { status: status }, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (response.data && response.data.data) { 
+        return { id: response.data.data.id, status: response.data.data.status }; 
+      }
+      return rejectWithValue("Failed to update user status: Unexpected response structure.");
+    } catch (err) {
+      const errorMessage =
+        err.response?.data?.message ||
+        err.response?.data?.error ||
+        err.message ||
+        "Failed to update user status.";
+      return rejectWithValue(errorMessage);
     }
   }
 );
@@ -213,6 +239,23 @@ const usersSlice = createSlice({
       .addCase(deleteUser.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload || action.error.message;
+      })
+      .addCase(updateStatus.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(updateStatus.fulfilled, (state, action) => {
+        state.loading = false;
+        const { id, status } = action.payload;
+        const index = state.users.findIndex((user) => user.id === id);
+        if (index !== -1) {
+          state.users[index].status = status;
+        }
+        state.error = null;
+      })
+      .addCase(updateStatus.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
       });
   },
 });

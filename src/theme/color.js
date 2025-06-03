@@ -7,11 +7,14 @@ const colors = {
   white: "#ffffff",
   black: "#000000",
 
-  //buttons
   buttonPrimaryBg: '#1565c0',
   buttonEditBg: '#52c41a', 
   buttonDeleteBg: '#ff4d4f', 
   buttonText: '#ffffff',
+
+  //for status toggle
+  success: '#52c41a', 
+  error: '#ff4d4f',
 };
 
 export default colors;

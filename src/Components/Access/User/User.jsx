@@ -12,6 +12,7 @@ import {
   Col,
   Popconfirm,
   Upload,
+  Switch,
 } from "antd";
 const { Option } = Select;
 
@@ -34,6 +35,7 @@ import {
   deleteUser,
   fetchUserById,
   clearSelectedUser,
+  updateStatus,
 } from "../../../store/slice/users/usersSlice";
 
 import UserViewDetails from './UserViewDetails'; 
@@ -202,6 +204,11 @@ const User = () => {
     return false;
   };
 
+  const handleStatusChange = async(checked, record)=>{
+    const newStatus = checked ? 1: 0;
+    await dispatch(updateStatus({id:record.id, status:newStatus}))
+  }
+
   const columns = [
     {
       title: "Name",
@@ -243,12 +250,19 @@ const User = () => {
       dataIndex: "status",
       key: "status",
       width: 120,
-      render: (status) => {
+      render: (status, record) => {
         const isActive = status === 1 || status === true;
         return (
-          <Tag color={isActive ? "green" : "red"}>
-            {isActive ? "ACTIVE" : "INACTIVE"}
-          </Tag>
+          <Switch
+            checked={isActive}
+            onChange={(checked) => handleStatusChange(checked, record)}
+            loading={loading}
+            checkedChildren="Active"
+            unCheckedChildren="Inactive"
+            style={{
+              backgroundColor: isActive ? colors.success : colors.error,
+            }}
+          />
         );
       },
       sorter: (a, b) => a.status - b.status,
