@@ -121,23 +121,6 @@ const Sidebar = ({ collapsed, isMobile, closeSidebar }) => {
           <Link to="/" onClick={handleClick}>Home</Link>
         </Menu.Item>
 
-        {/* <Menu.Item key="/login" icon={<LoginOutlined />}>
-          <Link to="/login" onClick={handleClick}>Login</Link>
-        </Menu.Item> */}
-
-        {/* <Menu.SubMenu key="/employee" icon={<TeamOutlined />} title="Employee">
-          <Menu.Item key="/employee/details" icon={<UserOutlined />}>
-            <Link to="/employee/details" onClick={handleClick}>Details</Link>
-          </Menu.Item>
-          <Menu.Item key="/employee/add" icon={<UserAddOutlined />}>
-            <Link to="/employee/add" onClick={handleClick}>Add Employee</Link>
-          </Menu.Item>
-        </Menu.SubMenu>
-
-        <Menu.Item key="/leave" icon={<CalendarOutlined />}>
-          <Link to="/leave" onClick={handleClick}>Leave</Link>
-        </Menu.Item> */}
-
         <Menu.SubMenu key="/access" icon={<KeyOutlined />} title="Access">
           <Menu.Item key="/access/users" icon={<UserOutlined />}>
             <Link to="/access/users" onClick={handleClick}>Users</Link>

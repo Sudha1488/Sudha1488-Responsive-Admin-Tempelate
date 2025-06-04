@@ -10,10 +10,11 @@ import {
   Row,
   Col,
   Popconfirm,
+  Switch,
 } from "antd";
 const { Option } = Select;
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import {
   EyeOutlined,
@@ -23,43 +24,71 @@ import {
 } from "@ant-design/icons";
 import colors from "../../../theme/color";
 import usePageTitle from "../../../hooks/usePageTitle";
-
-const staticRoles = [
-  {
-    id: 1,
-    name: "Admin",
-    description: "Full access to all modules",
-    permission: ["read", "write", "update", "delete"],
-    status: "active",
-  },
-  {
-    id: 2,
-    name: "Editor",
-    description: "Can edit and update content",
-    permission: ["read", "write", "update"],
-    status: "active",
-  },
-  {
-    id: 3,
-    name: "Viewer",
-    description: "Read-only access",
-    permission: ["read"],
-    status: "inactive",
-  },
-];
+import { useDispatch, useSelector } from "react-redux";
+import {
+  fetchRoles,
+  fetchRoleById,
+  updateRole,
+  deleteRole,
+  clearSelectedRole,
+  updateStatus,
+} from "../../../store/slice/roles/rolesSlice";
+import { useNavigate, useParams } from "react-router-dom";
 
 const Roles = () => {
-  usePageTitle('Roles');
-  const [roles, setRoles] = useState(staticRoles);
-  const [loading, setLoading] = useState(false);
-  
+  usePageTitle("Roles");
+
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const { action, id } = useParams();
+
+  const roles = useSelector((state) => state.roles.roles);
+  const selectedRoleFromStore = useSelector(
+    (state) => state.roles.selectedRole
+  );
+  const loading = useSelector((state) => state.roles.loading);
+  const roleLoading = useSelector((state)=>state.roles.roleLoading)
+  const error = useSelector((state) => state.roles.error);
+
   const [drawerVisible, setDrawerVisible] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [selectedRole, setSelectedRole] = useState(null);
   const [viewMode, setViewMode] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  
+
   const [form] = Form.useForm();
+
+  useEffect(() => {
+    dispatch(fetchRoles());
+  }, [dispatch]);
+
+  useEffect(() => {
+      if (action === "add") {
+        showDrawer();
+      } else if ((action === "edit" || action === "view") && id) {
+        dispatch(fetchRoleById(id));
+        setDrawerVisible(true);
+        setViewMode(action === "view");
+        setIsEditing(action === "edit");
+      } else {
+        if (drawerVisible) {
+          closeDrawer();
+        }
+      }
+    }, [action, id, dispatch]);
+
+    useEffect(() => {
+        if (selectedRoleFromStore) {
+          form.setFieldsValue({
+            ...selectedRoleFromStore,
+            status: selectedRoleFromStore.status === 1 || selectedRoleFromStore.status === true ? "active" : "inactive",
+            role_id: Number(selectedRoleFromStore.role_id), 
+          });
+    
+          
+        } else ((action === "edit" || action === "view") && !userLoading) {
+        }
+      }, [selectedRoleFromStore, form, action, roleLoading]);
 
   const showDrawer = () => {
     form.resetFields();
@@ -124,6 +153,11 @@ const Roles = () => {
     }
   };
 
+  const handleStatusChange = async (checked, record) => {
+    const newStatus = checked ? 1 : 0;
+    await dispatch(updateStatus({ id: record.id, status: newStatus }));
+  };
+
   const columns = [
     {
       title: "Name",
@@ -139,22 +173,34 @@ const Roles = () => {
       title: "Status",
       dataIndex: "status",
       key: "status",
-      render: (status) => (
-        <Tag color={status === "active" ? "green" : "red"}>
-          {status.toUpperCase()}
-        </Tag>
-      ),
+      width: 120,
+      render: (status, record) => {
+        const isActive = status === 1 || status === true;
+        return (
+          <Switch
+            checked={isActive}
+            onChange={(checked) => handleStatusChange(checked, record)}
+            loading={loading}
+            checkedChildren="Active"
+            unCheckedChildren="Inactive"
+            style={{
+              backgroundColor: isActive ? colors.success : colors.error,
+            }}
+          />
+        );
+      },
+      sorter: (a, b) => a.status - b.status,
     },
     {
       title: "Actions",
       key: "actions",
-      width:150,
-      fixed:"right",
+      width: 150,
+      fixed: "right",
       render: (_, record) => (
         <Space>
           <Button
             icon={<EyeOutlined />}
-            onClick={() => viewRole(record)}
+            onClick={() => navigate(`/access/roles/view/${record.id}`)}
             style={{
               backgroundColor: colors.buttonPrimaryBg,
               color: colors.buttonText,
@@ -162,7 +208,7 @@ const Roles = () => {
           />
           <Button
             icon={<EditOutlined />}
-            onClick={() => openEditDrawer(record)}
+            onClick={() => navigate(`/access/users/edit/${record.id}`)}
             style={{
               backgroundColor: colors.buttonEditBg,
               color: colors.buttonText,
@@ -173,7 +219,7 @@ const Roles = () => {
             description="Are you sure to delete this role?"
             okText="Yes"
             cancelText="No"
-            onConfirm={() => deleteRole(record.id)}
+            onConfirm={() => handleDeleteRole(record.id)}
           >
             <Button
               icon={<DeleteOutlined />}
@@ -187,6 +233,12 @@ const Roles = () => {
       ),
     },
   ];
+
+  const filteredRoles = roles.filter(
+    (role) =>
+      role.name?.toLowerCase().includes(searchTerm) ||
+      role.description?.toLowerCase().includes(searchTerm)
+  );
 
   return (
     <div>
@@ -220,18 +272,18 @@ const Roles = () => {
           </h2>
 
           <Button
-              icon={<PlusOutlined />}
-              type="primary"
-              size="middle"
-              style={{
-                backgroundColor: colors.secondary,
-                border: "none",
-                padding: "0 16px",
-              }}
-              onClick={showDrawer}
-            >
-              Add Role
-            </Button>
+            icon={<PlusOutlined />}
+            type="primary"
+            size="middle"
+            style={{
+              backgroundColor: colors.secondary,
+              border: "none",
+              padding: "0 16px",
+            }}
+            onClick={showDrawer}
+          >
+            Add Role
+          </Button>
         </div>
       </div>
       <div
@@ -242,31 +294,29 @@ const Roles = () => {
           boxShadow: "0 4px 10px rgba(0,0,0,0.06)",
         }}
       >
-        <div style={{
+        <div
+          style={{
             marginBottom: "16px",
             display: "flex",
-            justifyContent: "flex-end"}}>
-            <Input.Search
-              placeholder="Search by name or description"
-              allowClear
-              onChange={(e) => setSearchTerm(e.target.value.toLowerCase())}
-              style={{ width: 250 }}
-            />
-          </div>
+            justifyContent: "flex-end",
+          }}
+        >
+          <Input.Search
+            placeholder="Search by name or description"
+            allowClear
+            onChange={(e) => setSearchTerm(e.target.value.toLowerCase())}
+            style={{ width: 250 }}
+          />
+        </div>
         <div style={{ overflowX: "auto" }}>
-
-        <Table
-          dataSource={roles.filter(
-            (role) =>
-              role.name?.toLowerCase().includes(searchTerm) ||
-              role.description?.toLowerCase().includes(searchTerm)
-          )}
-          columns={columns}
-          loading={loading}
-          scroll={{ x: 900 }}
-          rowKey="id"
-          pagination={{ pageSize: 5 }}
-        />
+          <Table
+            dataSource={filteredRoles}
+            columns={columns}
+            loading={loading}
+            scroll={{ x: 900 }}
+            rowKey="id"
+            pagination={{ pageSize: 5 }}
+          />
         </div>
       </div>
 
@@ -282,11 +332,11 @@ const Roles = () => {
             {viewMode ? "View Role" : isEditing ? "Edit Role" : "Add New Role"}
           </div>
         }
-        width={360}
+        width={800}
         onClose={closeDrawer}
         open={drawerVisible}
         bodyStyle={{ paddingBottom: 80 }}
-        destroyOnClose
+        destroyOnClose={true}
         headerStyle={{
           backgroundColor: colors.secondary,
           borderBottom: "1px solid #444",

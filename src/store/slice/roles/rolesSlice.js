@@ -1,12 +1,12 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import API from "../../../api/api";
 
-export const fetchUsers = createAsyncThunk(
-  "users/fetchUsers",
+export const fetchRoles = createAsyncThunk(
+  "users/fetchRoles",
   async (_, { rejectWithValue, getState }) => {
     try {
       const token = getState().auth.token;
-      const res = await API.get("/admin/users/list", {
+      const res = await API.get("/admin/roles/list", {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -18,18 +18,18 @@ export const fetchUsers = createAsyncThunk(
       return [];
     } catch (err) {
       return rejectWithValue(
-        err.response?.data?.message || err.message || "Failed to fetch users"
+        err.response?.data?.message || err.message || "Failed to fetch roles"
       );
     }
   }
 );
 
-export const fetchUserById = createAsyncThunk(
-  "users/fetchUserById",
+export const fetchRoleById = createAsyncThunk(
+  "users/fetchRoleById",
   async (id, { rejectWithValue, getState }) => {
     try {
       const token = getState().auth.token;
-      const res = await API.get(`/admin/users/by-id/${id}`, {
+      const res = await API.get(`/admin/roles/by-id/${id}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -41,18 +41,18 @@ export const fetchUserById = createAsyncThunk(
       return null;
     } catch (err) {
       return rejectWithValue(
-        err.response?.data?.message || err.message || "Failed to fetch user"
+        err.response?.data?.message || err.message || "Failed to fetch role"
       );
     }
   }
 );
 
-export const addUser = createAsyncThunk(
-  "users/addUser",
+export const addRole = createAsyncThunk(
+  "roles/addRole",
   async (userData, { rejectWithValue, getState }) => {
     try {
       const token = getState().auth.token;
-      const response = await API.post("/admin/users/add", userData, {
+      const response = await API.post("/admin/roles/add", userData, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -67,23 +67,27 @@ export const addUser = createAsyncThunk(
         err.response?.data?.message ||
         err.response?.data?.error ||
         err.message ||
-        "Failed to add user";
+        "Failed to add roler";
       return rejectWithValue(errorMessage);
     }
   }
 );
 
-export const updateUser = createAsyncThunk(
-  "users/updateUser",
-  async ({ id, userFormData }, { rejectWithValue, getState }) => { 
+export const updateRole = createAsyncThunk(
+  "roles/updateRole",
+  async ({ id, userFormData }, { rejectWithValue, getState }) => {
     try {
       const token = getState().auth.token;
 
-      const response = await API.put(`/admin/users/update/${id}`, userFormData, { 
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const response = await API.put(
+        `/admin/roles/update/${id}`,
+        userFormData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
 
       if (response.data && response.data.data) {
         return response.data.data;
@@ -91,18 +95,21 @@ export const updateUser = createAsyncThunk(
       return response.data;
     } catch (err) {
       const errorMessage =
-        err.response?.data?.message || err.response?.data?.error || err.message || "Failed to update user";
+        err.response?.data?.message ||
+        err.response?.data?.error ||
+        err.message ||
+        "Failed to update role";
       return rejectWithValue(errorMessage);
     }
   }
 );
 
-export const deleteUser = createAsyncThunk(
-  "users/deleteUser",
+export const deleteRole = createAsyncThunk(
+  "users/deleteRole",
   async (id, { rejectWithValue, getState }) => {
     try {
       const token = getState().auth.token;
-      await API.delete(`/admin/users/delete/${id}`, {
+      await API.delete(`/admin/roles/delete/${id}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -110,135 +117,142 @@ export const deleteUser = createAsyncThunk(
       return id;
     } catch (err) {
       return rejectWithValue(
-        err.response?.data?.message || err.message || "Failed to delete user"
+        err.response?.data?.message || err.message || "Failed to delete role"
       );
     }
   }
 );
 
-
 export const updateStatus = createAsyncThunk(
-  "users/updateUserStatus",
+  "roles/updateRoleStatus",
   async ({ id, status }, { rejectWithValue, getState }) => {
     try {
       const token = getState().auth.token;
-      const response = await API.patch(`/admin/users/status/${id}`, { status: status }, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const response = await API.patch(
+        `/admin/roles/status/${id}`,
+        { status: status },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
 
-      if (response.data && response.data.data) { 
-        return { id: response.data.data.id, status: response.data.data.status }; 
+      if (response.data && response.data.data) {
+        return { id: response.data.data.id, status: response.data.data.status };
       }
-      return rejectWithValue("Failed to update user status: Unexpected response structure.");
+      return rejectWithValue(
+        "Failed to update user status: Unexpected response structure."
+      );
     } catch (err) {
       const errorMessage =
         err.response?.data?.message ||
         err.response?.data?.error ||
         err.message ||
-        "Failed to update user status.";
+        "Failed to update role status.";
       return rejectWithValue(errorMessage);
     }
   }
 );
 
 const initialState = {
-  users: [],
-  selectedUser: null,
+  roles: [],
+  selectedRole: null,
   loading: false,
-  userLoading: false,
+  roleLoading: false,
   error: null,
 };
 
-const usersSlice = createSlice({
-  name: "users",
+const rolesSlice = createSlice({
+  name: "roles",
   initialState,
   reducers: {
     clearError: (state) => {
       state.error = null;
     },
-    clearSelectedUser: (state) => {
-      state.selectedUser = null;
-      state.userLoading = false;
+    clearSelectedRole: (state) => {
+      state.selectedRole = null;
+      state.roleLoading = false;
     },
   },
   extraReducers: (builder) => {
     builder
-      .addCase(fetchUsers.pending, (state) => {
+      .addCase(fetchRoles.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
-      .addCase(fetchUsers.fulfilled, (state, action) => {
+      .addCase(fetchRoles.fulfilled, (state, action) => {
         state.loading = false;
-        state.users = action.payload;
+        state.roles = action.payload;
         state.error = null;
       })
-      .addCase(fetchUsers.rejected, (state, action) => {
+      .addCase(fetchRoles.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload || action.error.message;
       })
-      .addCase(fetchUserById.pending, (state) => {
-        state.userLoading = true;
-        state.selectedUser = null;
+
+      .addCase(fetchRoleById.pending, (state) => {
+        state.roleLoading = true;
+        state.selectedRole = null;
         state.error = null;
       })
-      .addCase(fetchUserById.fulfilled, (state, action) => {
-        state.userLoading = false;
-        state.selectedUser = action.payload;
+      .addCase(fetchRoleById.fulfilled, (state, action) => {
+        state.roleLoading = false;
+        state.selectedRole = action.payload;
         state.error = null;
       })
-      .addCase(fetchUserById.rejected, (state, action) => {
-        state.userLoading = false;
-        state.selectedUser = null;
+      .addCase(fetchRoleById.rejected, (state, action) => {
+        state.roleLoading = false;
+        state.selectedRole = null;
         state.error = action.payload || action.error.message;
       })
-      .addCase(addUser.pending, (state) => {
+      .addCase(addRole.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
-      .addCase(addUser.fulfilled, (state, action) => {
+      .addCase(addRole.fulfilled, (state, action) => {
         state.loading = false;
-        state.users.push(action.payload);
+        state.roles.push(action.payload);
         state.error = null;
       })
-      .addCase(addUser.rejected, (state, action) => {
+      .addCase(addRole.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload || action.error.message;
       })
-      .addCase(updateUser.pending, (state) => {
+      .addCase(updateRole.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
-      .addCase(updateUser.fulfilled, (state, action) => {
+      .addCase(updateRole.fulfilled, (state, action) => {
         state.loading = false;
-        const updatedUser = action.payload;
-        const index = state.users.findIndex(
-          (user) => user.id === updatedUser.id
+        const updatedRole = action.payload;
+        const index = state.roles.findIndex(
+          (role) => role.id === updatedRole.id
         );
         if (index !== -1) {
-          state.users[index] = updatedUser;
+          state.roles[index] = updatedRole;
         }
         state.error = null;
-        state.selectedUser = updatedUser;
+        state.selectedRole = updatedRole;
       })
-      .addCase(updateUser.rejected, (state, action) => {
+      .addCase(updateRole.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload || action.error.message;
       })
-      .addCase(deleteUser.pending, (state) => {
+      .addCase(deleteRole.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
-      .addCase(deleteUser.fulfilled, (state, action) => {
+      .addCase(deleteRole.fulfilled, (state, action) => {
         state.loading = false;
-        state.users = state.users.filter((user) => user.id !== action.payload);
+        state.roles = state.roles.filter((role) => role.id !== action.payload);
         state.error = null;
       })
-      .addCase(deleteUser.rejected, (state, action) => {
+      .addCase(deleteRole.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload || action.error.message;
       })
+
       .addCase(updateStatus.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -246,10 +260,9 @@ const usersSlice = createSlice({
       .addCase(updateStatus.fulfilled, (state, action) => {
         state.loading = false;
         const { id, status } = action.payload;
-        const index = state.users.findIndex((user) => user.id === id);
-        if (index !== -1) {
-          state.users[index].status = status;
-        }
+        state.roles = state.roles.map((role) =>
+          role.id === id ? { ...role, status: status } : role
+        );
         state.error = null;
       })
       .addCase(updateStatus.rejected, (state, action) => {
@@ -259,5 +272,5 @@ const usersSlice = createSlice({
   },
 });
 
-export const { clearError, clearSelectedUser } = usersSlice.actions;
-export default usersSlice.reducer;
+export const { clearError, clearSelectedRole } = rolesSlice.actions;
+export default rolesSlice.reducer;

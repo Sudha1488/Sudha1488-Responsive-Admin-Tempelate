@@ -146,7 +146,7 @@ const User = () => {
       });
 
       if (fileList.length > 0 && fileList[0].originFileObj) {
-        formData.append("profile_img", fileList[0].o);
+        formData.append("profile_img", fileList[0].originFileObj);
       } 
 
       if (isEditing && selectedUserFromStore) {

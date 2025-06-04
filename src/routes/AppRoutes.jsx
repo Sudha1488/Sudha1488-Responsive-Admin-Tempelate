@@ -31,17 +31,17 @@ const AppRoutes = () => {
         <Route element={<MainLayout />}>
           <Route path="/" element={<Home />} />
 
-          {/* <Route path="/leave" element={<Leave />} />
-
-          <Route path="/employee/details" element={<EmployeeDetails />} />
-          <Route path="/employee/add" element={<AddEmployee />} /> */}
-          
+          {/* Users Module */}
           <Route path="/access/users" element={<User />} />
           <Route path="/access/users/:action" element={<User />} />
           <Route path="/access/users/:action/:id" element={<User />} />
-          <Route path="/access/roles" element={<Roles />} />
-          <Route path="/access/permissions" element={<Permissions />} />
 
+          {/* Access Module */}
+          <Route path="/access/roles" element={<Roles />} />
+          <Route path="/access/roles/:action" element={<Roles />} />
+          <Route path="/access/roles/:action/:id" element={<Roles />} />
+
+          <Route path="/access/permissions" element={<Permissions />} />
           <Route path="/manage-blogs/category" element={<Category />} />
           <Route path="/manage-blogs/list" element={<Blogs />} />
 
