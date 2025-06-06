@@ -1,12 +1,12 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import API from "../../../api/api";
 
-export const fetchRoles = createAsyncThunk(
-  "users/fetchRoles",
+export const fetchPermissions = createAsyncThunk(
+  "permissions/fetchPermissions",
   async (_, { rejectWithValue, getState }) => {
     try {
       const token = getState().auth.token;
-      const res = await API.get("/admin/roles/list", {
+      const res = await API.get("/admin/permissions/list", {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -18,18 +18,20 @@ export const fetchRoles = createAsyncThunk(
       return [];
     } catch (err) {
       return rejectWithValue(
-        err.response?.data?.message || err.message || "Failed to fetch roles"
+        err.response?.data?.message ||
+          err.message ||
+          "Failed to fetch permissions"
       );
     }
   }
 );
 
-export const fetchRoleById = createAsyncThunk(
-  "roles/fetchRoleById",
+export const fetchPermissionsById = createAsyncThunk(
+  "permissions/fetchPermissionsById",
   async (id, { rejectWithValue, getState }) => {
     try {
       const token = getState().auth.token;
-      const res = await API.get(`/admin/roles/by-id/${id}`, {
+      const res = await API.get(`/admin/permissions/by-id/${id}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -41,38 +43,20 @@ export const fetchRoleById = createAsyncThunk(
       return null;
     } catch (err) {
       return rejectWithValue(
-        err.response?.data?.message || err.message || "Failed to fetch role"
+        err.response?.data?.message ||
+          err.message ||
+          "Failed to fetch permissions"
       );
     }
   }
 );
 
-export const fetchRolePermissions = createAsyncThunk("roles/fetchRolePermissions",async(id, {rejectWithValue, getState})=>{
-  try {
-    const token =getState().auth.token;
-    const res = await API.get(`/admin/roles/get-permissions`,{
-      headers:{
-        Authorization: `Bearer ${token}`,
-      }
-    });
-
-    if(res.data?.data){
-      return res.data.data;
-    }
-    return null;
-  } catch (error) {
-    return rejectWithValue(
-      err.response?.data?.message || err.message || "Failed to fetch role's permissions"
-    );
-  }
-});
-
-export const addRole = createAsyncThunk(
-  "roles/addRole",
+export const addPermission = createAsyncThunk(
+  "permissions/addPermission",
   async (userData, { rejectWithValue, getState }) => {
     try {
       const token = getState().auth.token;
-      const response = await API.post("/admin/roles/add", userData, {
+      const response = await API.post("/admin/permissions/add", userData, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -87,21 +71,21 @@ export const addRole = createAsyncThunk(
         err.response?.data?.message ||
         err.response?.data?.error ||
         err.message ||
-        "Failed to add roler";
+        "Failed to add permissions";
       return rejectWithValue(errorMessage);
     }
   }
 );
 
-export const updateRole = createAsyncThunk(
-  "roles/updateRole",
+export const updatePermission = createAsyncThunk(
+  "permissions/updatePermission",
   async ({ id, userFormData }, { rejectWithValue, getState }) => {
-    console.log("Form Data before updating", userFormData)
+    console.log("Form Data before updating", userFormData);
     try {
       const token = getState().auth.token;
 
       const response = await API.put(
-        `/admin/roles/update/${id}`,
+        `/admin/permissions/update/${id}`,
         userFormData,
         {
           headers: {
@@ -119,18 +103,18 @@ export const updateRole = createAsyncThunk(
         err.response?.data?.message ||
         err.response?.data?.error ||
         err.message ||
-        "Failed to update role";
+        "Failed to update permission";
       return rejectWithValue(errorMessage);
     }
   }
 );
 
-export const deleteRole = createAsyncThunk(
-  "users/deleteRole",
+export const deletePermission = createAsyncThunk(
+  "permissions/deletePermission",
   async (id, { rejectWithValue, getState }) => {
     try {
       const token = getState().auth.token;
-      await API.delete(`/admin/roles/delete/${id}`, {
+      await API.delete(`/admin/permissions/delete/${id}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -138,19 +122,21 @@ export const deleteRole = createAsyncThunk(
       return id;
     } catch (err) {
       return rejectWithValue(
-        err.response?.data?.message || err.message || "Failed to delete role"
+        err.response?.data?.message ||
+          err.message ||
+          "Failed to delete Permission"
       );
     }
   }
 );
 
 export const updateStatus = createAsyncThunk(
-  "roles/updateRoleStatus",
+  "permissions/updateStatus",
   async ({ id, status }, { rejectWithValue, getState }) => {
     try {
       const token = getState().auth.token;
       const response = await API.patch(
-        `/admin/roles/status/${id}`,
+        `/admin/permissions/status/${id}`,
         { status: status },
         {
           headers: {
@@ -159,118 +145,140 @@ export const updateStatus = createAsyncThunk(
         }
       );
 
-      if (response.data && response.data.data && response.data.data.length > 0) {
+      if (
+        response.data &&
+        response.data.data &&
+        response.data.data.length > 0
+      ) {
         const updatedRoleFromResponse = response.data.data[0];
-        return { id: updatedRoleFromResponse.id, status: updatedRoleFromResponse.status };
+        return {
+          id: updatedRoleFromResponse.id,
+          status: updatedRoleFromResponse.status,
+        };
       }
       return rejectWithValue(
-        "Failed to update role status: Unexpected response structure or empty data array."
+        "Failed to update permission status: Unexpected response structure or empty data array."
       );
     } catch (err) {
       const errorMessage =
         err.response?.data?.message ||
         err.response?.data?.error ||
         err.message ||
-        "Failed to update role status.";
+        "Failed to update permission status.";
       return rejectWithValue(errorMessage);
     }
   }
 );
 
 const initialState = {
-  roles: [],
-  selectedRole: null,
+  permissions: [],
+  selectedPermission: null,
   loading: false,
-  roleLoading: false,
+  permissionLoading: false,
   error: null,
 };
 
-const rolesSlice = createSlice({
-  name: "roles",
+const permissionsSlice = createSlice({
+  name: "permissions",
   initialState,
   reducers: {
     clearError: (state) => {
       state.error = null;
     },
-    clearSelectedRole: (state) => {
-      state.selectedRole = null;
-      state.roleLoading = false;
+    clearSelectedPermission: (state) => {
+      state.selectedPermission = null;
+      state.permissionLoading = false;
     },
   },
   extraReducers: (builder) => {
     builder
-      .addCase(fetchRoles.pending, (state) => {
+      .addCase(fetchPermissions.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
-      .addCase(fetchRoles.fulfilled, (state, action) => {
+      .addCase(fetchPermissions.fulfilled, (state, action) => {
         state.loading = false;
-        state.roles = action.payload;
+        state.permissions = action.payload;
         state.error = null;
       })
-      .addCase(fetchRoles.rejected, (state, action) => {
+      .addCase(fetchPermissions.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload || action.error.message;
       })
 
-      .addCase(fetchRoleById.pending, (state) => {
-        state.roleLoading = true;
-        state.selectedRole = null;
+      .addCase(fetchPermissionsById.pending, (state) => {
+        state.permissionLoading = true;
+        state.selectedPermission = null;
         state.error = null;
       })
-      .addCase(fetchRoleById.fulfilled, (state, action) => {
-        state.roleLoading = false;
-        state.selectedRole = action.payload;
+      .addCase(fetchPermissionsById.fulfilled, (state, action) => {
+        state.permissionLoading = false;
+        state.selectedPermission = action.payload;
         state.error = null;
       })
-      .addCase(fetchRoleById.rejected, (state, action) => {
-        state.roleLoading = false;
-        state.selectedRole = null;
+      .addCase(fetchPermissionsById.rejected, (state, action) => {
+        state.permissionLoading = false;
+        state.selectedPermission = null;
         state.error = action.payload || action.error.message;
       })
-      .addCase(addRole.pending, (state) => {
+      .addCase(addPermission.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
-      .addCase(addRole.fulfilled, (state, action) => {
+      .addCase(addPermission.fulfilled, (state, action) => {
         state.loading = false;
-        state.roles.push(action.payload);
+        state.permissions.push(action.payload);
         state.error = null;
       })
-      .addCase(addRole.rejected, (state, action) => {
+      .addCase(addPermission.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload || action.error.message;
       })
-      .addCase(updateRole.pending, (state) => {
+      .addCase(updatePermission.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
-      .addCase(updateRole.fulfilled, (state, action) => {
+
+      .addCase(updatePermission.fulfilled, (state, action) => {
         state.loading = false;
-        const updatedRole = action.payload;
-        const index = state.roles.findIndex(
-          (role) => role.id === updatedRole.id
-        );
-        if (index !== -1) {
-          state.roles[index] = updatedRole;
+        const updatedPermission =
+          action.payload &&
+          Array.isArray(action.payload) &&
+          action.payload.length > 0
+            ? action.payload[0]
+            : null;
+
+        if (updatedPermission) {
+          const index = state.permissions.findIndex(
+            (permission) => permission.id === updatedPermission.id
+          );
+          if (index !== -1) {
+            state.permissions[index] = updatedPermission;
+          }
+          state.selectedPermission = updatedPermission;
+        } else {
+          console.warn(
+            "Update permission API returned no data or unexpected format in payload."
+          );
         }
         state.error = null;
-        state.selectedRole = updatedRole;
       })
-      .addCase(updateRole.rejected, (state, action) => {
+      .addCase(updatePermission.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload || action.error.message;
       })
-      .addCase(deleteRole.pending, (state) => {
+      .addCase(deletePermission.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
-      .addCase(deleteRole.fulfilled, (state, action) => {
+      .addCase(deletePermission.fulfilled, (state, action) => {
         state.loading = false;
-        state.roles = state.roles.filter((role) => role.id !== action.payload);
+        state.permissions = state.permissions.filter(
+          (permission) => permission.id !== action.payload
+        );
         state.error = null;
       })
-      .addCase(deleteRole.rejected, (state, action) => {
+      .addCase(deletePermission.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload || action.error.message;
       })
@@ -281,12 +289,15 @@ const rolesSlice = createSlice({
       })
       .addCase(updateStatus.fulfilled, (state, action) => {
         state.loading = false;
-        const { id, status } = action.payload;  
-        state.roles = state.roles.map((role) =>
-          role.id === id ? { ...role, status: status } : role
+        const { id, status } = action.payload;
+        state.permissions = state.permissions.map((permission) =>
+          permission.id === id ? { ...permission, status: status } : permission
         );
-        if (state.selectedRole && state.selectedRole.id === id) {
-          state.selectedRole = { ...state.selectedRole, status: status };
+        if (state.selectedPermission && state.selectedPermission.id === id) {
+          state.selectedPermission = {
+            ...state.selectedPermission,
+            status: status,
+          };
         }
         state.error = null;
       })
@@ -297,5 +308,5 @@ const rolesSlice = createSlice({
   },
 });
 
-export const { clearError, clearSelectedRole } = rolesSlice.actions;
-export default rolesSlice.reducer;
+export const { clearError, clearSelectedPermission } = permissionsSlice.actions;
+export default permissionsSlice.reducer;

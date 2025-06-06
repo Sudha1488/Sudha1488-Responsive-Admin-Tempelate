@@ -30,10 +30,10 @@ import usePageTitle from "../../../hooks/usePageTitle";
 import { useDispatch, useSelector } from "react-redux";
 import {
   fetchUsers,
+  fetchUserById,
   addUser,
   updateUser,
   deleteUser,
-  fetchUserById,
   clearSelectedUser,
   updateStatus,
 } from "../../../store/slice/users/usersSlice";

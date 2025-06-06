@@ -6,6 +6,7 @@ import {
   Select,
   Table,
   Tag,
+  Switch,
   Space,
   Row,
   Col,
@@ -13,7 +14,7 @@ import {
 } from "antd";
 const { Option } = Select;
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import {
   EyeOutlined,
@@ -23,111 +24,156 @@ import {
 } from "@ant-design/icons";
 import colors from "../../../theme/color";
 import usePageTitle from "../../../hooks/usePageTitle";
-
-
-const staticPermissions = [
-  {
-    id: 1,
-    name: "User Management",
-    description: "Create, update, and delete users",
-    status: "active",
-  },
-  {
-    id: 2,
-    name: "Role Management",
-    description: "Create, update, and delete roles",
-    status: "active",
-  },
-  {
-    id: 3,
-    name: "Content Management",
-    description: "Manage website content and pages",
-    status: "inactive",
-  },
-  {
-    id: 4,
-    name: "System Settings",
-    description: "Configure system settings and parameters",
-    status: "active",
-  },
-];
+import { useDispatch, useSelector } from "react-redux";
+import {
+  fetchPermissions,
+  fetchPermissionsById,
+  addPermission,
+  updatePermission,
+  deletePermission,
+  clearSelectedPermission,
+  updateStatus,
+} from "../../../store/slice/permissions/permissionsSlice";
+import { useNavigate, useParams } from "react-router-dom";
 
 const Permissions = () => {
-  usePageTitle('Permissions');
-  const [permissions, setPermissions] = useState(staticPermissions);
-  const [loading, setLoading] = useState(false);
+  usePageTitle("Permissions");
+
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const { action, id } = useParams();
+
+  const permissions = useSelector((state) => state.permissions.permissions);
+  const selectedPermissionFromStore = useSelector(
+    (state) => state.permissions.selectedPermission
+  );
+  const loading = useSelector((state) => state.permissions.loading);
+  const permissionLoading = useSelector(
+    (state) => state.permissions.permissionLoading
+  );
+  const error = useSelector((state) => state.permissions.error);
 
   const [drawerVisible, setDrawerVisible] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  const [selectedPermission, setSelectedPermission] = useState(null);
   const [viewMode, setViewMode] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
 
   const [form] = Form.useForm();
 
+  useEffect(() => {
+    dispatch(fetchPermissions());
+  }, [dispatch]);
+
+  useEffect(() => {
+    if (action === "add") {
+      showDrawer();
+    } else if ((action === "edit" || action === "view") && id) {
+      dispatch(fetchPermissionsById(id));
+      setDrawerVisible(true);
+      setViewMode(action === "view");
+      setIsEditing(action === "edit");
+    } else {
+      if (drawerVisible) {
+        closeDrawer();
+      }
+    }
+  }, [action, id, dispatch]);
+
+  useEffect(() => {
+    if (selectedPermissionFromStore) {
+      form.setFieldsValue({
+        ...selectedPermissionFromStore,
+        status:
+          selectedPermissionFromStore.status === 1 ||
+          selectedPermissionFromStore.status === true
+            ? "active"
+            : "inactive",
+        role_id: Number(selectedPermissionFromStore.role_id),
+      });
+    } else if ((action === "edit" || action === "view") && !permissionLoading) {
+    }
+  }, [selectedPermissionFromStore, form, action, permissionLoading]);
+
+  useEffect(() => {
+    if (error) {
+      toast.error(error);
+    }
+  }, [error]);
+
   const showDrawer = () => {
     form.resetFields();
     setIsEditing(false);
-    setSelectedPermission(null);
     setViewMode(false);
     setDrawerVisible(true);
+    dispatch(clearSelectedPermission());
+    navigate("/access/permissions/add");
   };
 
   const closeDrawer = () => {
     setDrawerVisible(false);
     setIsEditing(false);
-    setSelectedPermission(null);
     setViewMode(false);
     form.resetFields();
+    dispatch(clearSelectedPermission());
+    navigate("/access/permissions");
   };
 
-  const onFinish = (values) => {
+  const onFinish = async (values) => {
     try {
-      if (isEditing && selectedPermission) {
-        const updated = permissions.map((permission) =>
-          permission.id === selectedPermission.id
-            ? { ...permission, ...values }
-            : permission
+      const processedValues = {
+        ...values,
+        status: values.status === "active" ? 1 : 0,
+      };
+
+      let resultAction;
+      if (isEditing && selectedPermissionFromStore) {
+        resultAction = await dispatch(
+          updatePermission({
+            id: selectedPermissionFromStore.id,
+           userFormData: processedValues,
+          })
         );
-        setPermissions(updated);
-        toast.success("Permission updated successfully");
+        if (updatePermission.fulfilled.match(resultAction)) {
+          toast.success("Permission updated successfully");
+          closeDrawer();
+          dispatch(fetchPermissions());
+        } else {
+          toast.error(
+            resultAction.payload?.message || "Failed to update permission"
+          );
+        }
       } else {
-        const newPermission = {
-          ...values,
-          id: Math.max(...permissions.map((p) => p.id)) + 1,
-        };
-        const updated = [...permissions, newPermission];
-        setPermissions(updated);
-        toast.success("Permission added successfully");
+        resultAction = await dispatch(addPermission(processedValues));
+        if (addPermission.fulfilled.match(resultAction)) {
+          toast.success("Permission added successfully");
+          closeDrawer();
+          dispatch(fetchPermissions());
+        } else {
+          toast.error(resultAction.payload?.message || "Failed to add Permission");
+        }
       }
-      closeDrawer();
     } catch (error) {
-      toast.error("Failed to save permission");
+      toast.error("An unexpected error occurred during form submission.");
     }
   };
 
-  const openEditDrawer = (permission) => {
-    setSelectedPermission(permission);
-    setIsEditing(true);
-    setDrawerVisible(true);
-    form.setFieldsValue(permission);
-  };
-
-  const viewPermission = (permission) => {
-    setSelectedPermission(permission);
-    setViewMode(true);
-    setDrawerVisible(true);
-    form.setFieldsValue(permission);
-  };
-
-  const deletePermission = (id) => {
-    try {
-      const updated = permissions.filter((p) => p.id !== id);
-      setPermissions(updated);
-      toast.success("Permission deleted successfully");
-    } catch (error) {
-      toast.error("Failed to delete permission");
+  const handleDeletePermission = async (id)=>{
+    try{
+      const resultAction = await dispatch(deletePermission(id));
+      if(deletePermission.fulfilled.match(resultAction)){
+        toast.success("Permission deleted successfully.")
+      }else {
+        toast.error(resultAction.payload?.message || "Failed to delete permission");
+      }
+    }catch(error){
+      toast.error("An unexpected error occurred during deletion.")
     }
+  }
+  
+
+  const handleStatusChange = async (checked, record) => {
+    const newStatus = checked ? 1 : 0;
+    await dispatch(updateStatus({ id: record.id, status: newStatus }));
   };
 
   const columns = [
@@ -145,11 +191,22 @@ const Permissions = () => {
       title: "Status",
       dataIndex: "status",
       key: "status",
-      render: (status) => (
-        <Tag color={status === "active" ? "green" : "red"}>
-          {status.toUpperCase()}
-        </Tag>
-      ),
+      render: (status, record) => {
+        const isActive = status === 1 || status === true;
+        return (
+          <Switch
+            checked={isActive}
+            onChange={(checked) => handleStatusChange(checked, record)}
+            loading={loading}
+            checkedChildren="Active"
+            unCheckedChildren="Inactive"
+            style={{
+              backgroundColor: isActive ? colors.success : colors.error,
+            }}
+          />
+        );
+      },
+      sorter: (a, b) => a.status - b.status,
     },
     {
       title: "Actions",
@@ -160,7 +217,7 @@ const Permissions = () => {
         <Space>
           <Button
             icon={<EyeOutlined />}
-            onClick={() => viewPermission(record)}
+            onClick={() => navigate(`/access/permissions/view/${record.id}`)}
             style={{
               backgroundColor: colors.buttonPrimaryBg,
               color: colors.buttonText,
@@ -168,7 +225,7 @@ const Permissions = () => {
           />
           <Button
             icon={<EditOutlined />}
-            onClick={() => openEditDrawer(record)}
+            onClick={() => navigate(`/access/permissions/edit/${record.id}`)}
             style={{
               backgroundColor: colors.buttonEditBg,
               color: colors.buttonText,
@@ -179,7 +236,7 @@ const Permissions = () => {
             description="Are you sure to delete this permission?"
             okText="Yes"
             cancelText="No"
-            onConfirm={() => deletePermission(record.id)}
+            onConfirm={() => handleDeletePermission(record.id)}
           >
             <Button
               icon={<DeleteOutlined />}
@@ -193,6 +250,12 @@ const Permissions = () => {
       ),
     },
   ];
+
+  const filteredPermissions = permissions.filter(
+    (permission) =>
+      permission.name?.toLowerCase().includes(searchTerm) ||
+      permission.description?.toLowerCase().includes(searchTerm)
+  );
 
   return (
     <div>
@@ -264,11 +327,7 @@ const Permissions = () => {
         </div>
         <div style={{ overflowX: "auto" }}>
           <Table
-            dataSource={permissions.filter(
-              (permission) =>
-                permission.name?.toLowerCase().includes(searchTerm) ||
-                permission.description?.toLowerCase().includes(searchTerm)
-            )}
+            dataSource={filteredPermissions}
             columns={columns}
             loading={loading}
             rowKey="id"

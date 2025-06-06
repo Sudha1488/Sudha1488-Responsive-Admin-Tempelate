@@ -5,10 +5,7 @@ import {
   Input,
   Select,
   Table,
-  Tag,
   Space,
-  Row,
-  Col,
   Popconfirm,
   Switch,
 } from "antd";
@@ -28,12 +25,16 @@ import { useDispatch, useSelector } from "react-redux";
 import {
   fetchRoles,
   fetchRoleById,
+  addRole, 
   updateRole,
-  deleteRole,
+  deleteRole, 
   clearSelectedRole,
   updateStatus,
 } from "../../../store/slice/roles/rolesSlice";
 import { useNavigate, useParams } from "react-router-dom";
+import RoleViewDetails from "./RoleViewDetails";
+
+
 
 const Roles = () => {
   usePageTitle("Roles");
@@ -47,12 +48,11 @@ const Roles = () => {
     (state) => state.roles.selectedRole
   );
   const loading = useSelector((state) => state.roles.loading);
-  const roleLoading = useSelector((state)=>state.roles.roleLoading)
+  const roleLoading = useSelector((state) => state.roles.roleLoading);
   const error = useSelector((state) => state.roles.error);
 
   const [drawerVisible, setDrawerVisible] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  const [selectedRole, setSelectedRole] = useState(null);
   const [viewMode, setViewMode] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
 
@@ -63,106 +63,114 @@ const Roles = () => {
   }, [dispatch]);
 
   useEffect(() => {
-      if (action === "add") {
-        showDrawer();
-      } else if ((action === "edit" || action === "view") && id) {
-        dispatch(fetchRoleById(id));
-        setDrawerVisible(true);
-        setViewMode(action === "view");
-        setIsEditing(action === "edit");
-      } else {
-        if (drawerVisible) {
-          closeDrawer();
-        }
+    if (action === "add") {
+      showDrawer();
+    } else if ((action === "edit" || action === "view") && id) {
+      dispatch(fetchRoleById(id));
+      setDrawerVisible(true);
+      setViewMode(action === "view");
+      setIsEditing(action === "edit");
+    } else {
+      if (drawerVisible) {
+        closeDrawer();
       }
-    }, [action, id, dispatch]);
+    }
+  }, [action, id, dispatch]);
 
-    useEffect(() => {
-        if (selectedRoleFromStore) {
-          form.setFieldsValue({
-            ...selectedRoleFromStore,
-            status: selectedRoleFromStore.status === 1 || selectedRoleFromStore.status === true ? "active" : "inactive",
-            role_id: Number(selectedRoleFromStore.role_id), 
-          });
-    
-          
-        } else ((action === "edit" || action === "view") && !userLoading) {
-        }
-      }, [selectedRoleFromStore, form, action, roleLoading]);
+  useEffect(() => {
+    if (selectedRoleFromStore) {
+      form.setFieldsValue({
+        ...selectedRoleFromStore,
+        status: selectedRoleFromStore.status === 1 || selectedRoleFromStore.status === true ? "active" : "inactive",
+        role_id: Number(selectedRoleFromStore.role_id), 
+      });
+
+    } else if ((action === "edit" || action === "view") && !roleLoading) {
+    }
+  }, [selectedRoleFromStore, form, action, roleLoading]);
+
+  useEffect(() => {
+    if (error) {
+      toast.error(error);
+    }
+  }, [error]);
 
   const showDrawer = () => {
     form.resetFields();
     setIsEditing(false);
-    setSelectedRole(null);
     setViewMode(false);
     setDrawerVisible(true);
+    dispatch(clearSelectedRole()); 
+    navigate("/access/roles/add");
   };
 
   const closeDrawer = () => {
     setDrawerVisible(false);
     setIsEditing(false);
-    setSelectedRole(null);
     setViewMode(false);
     form.resetFields();
+    dispatch(clearSelectedRole()); 
+    navigate("/access/roles");
   };
 
-  const onFinish = (values) => {
+  const onFinish = async (values) => {
     try {
-      if (isEditing && selectedRole) {
-        const updated = roles.map((role) =>
-          role.id === selectedRole.id ? { ...role, ...values } : role
+      const processedValues = {
+        ...values,
+        status: values.status === "active" ? 1 : 0,
+      };
+
+      let resultAction;
+      if (isEditing && selectedRoleFromStore) {
+        resultAction = await dispatch(
+          updateRole({ id: selectedRoleFromStore.id, role: processedValues })
         );
-        setRoles(updated);
-        toast.success("Role updated successfully");
+        if (updateRole.fulfilled.match(resultAction)) {
+          toast.success("Role updated successfully");
+          closeDrawer();
+          dispatch(fetchRoles());
+        } else {
+          toast.error(resultAction.payload?.message || "Failed to update role");
+        }
       } else {
-        const newRole = {
-          ...values,
-          id: Math.max(...roles.map((r) => r.id)) + 1,
-        };
-        const updated = [...roles, newRole];
-        setRoles(updated);
-        toast.success("Role added successfully");
+        resultAction = await dispatch(addRole(processedValues));
+        if (addRole.fulfilled.match(resultAction)) {
+          toast.success("Role added successfully");
+          closeDrawer();
+          dispatch(fetchRoles());
+        } else {
+          toast.error(resultAction.payload?.message || "Failed to add role");
+        }
       }
-      closeDrawer();
     } catch (error) {
-      toast.error("Failed to save role");
+      toast.error("An unexpected error occurred during form submission.");
     }
   };
 
-  const openEditDrawer = (role) => {
-    setSelectedRole(role);
-    setIsEditing(true);
-    setDrawerVisible(true);
-    form.setFieldsValue(role);
-  };
-
-  const viewRole = (role) => {
-    setSelectedRole(role);
-    setViewMode(true);
-    setDrawerVisible(true);
-    form.setFieldsValue(role);
-  };
-
-  const deleteRole = (id) => {
+  const handleDeleteRole = async (id) => {
     try {
-      const updated = roles.filter((r) => r.id !== id);
-      setRoles(updated);
-      toast.success("Role deleted successfully");
+      const resultAction = await dispatch(deleteRole(id));
+      if (deleteRole.fulfilled.match(resultAction)) {
+        toast.success("Role deleted successfully.");
+      } else {
+        toast.error(resultAction.payload?.message || "Failed to delete role");
+      }
     } catch (error) {
-      toast.error("Failed to delete role");
+      toast.error("An unexpected error occurred during deletion.");
     }
   };
 
-  const handleStatusChange = async (checked, record) => {
-    const newStatus = checked ? 1 : 0;
-    await dispatch(updateStatus({ id: record.id, status: newStatus }));
-  };
+  const handleStatusChange = async(checked, record)=>{
+      const newStatus = checked ? 1: 0;
+      await dispatch(updateStatus({id:record.id, status:newStatus}))
+    }
 
   const columns = [
     {
       title: "Name",
       dataIndex: "name",
       key: "name",
+      sorter: (a, b) => a.name.localeCompare(b.name),
     },
     {
       title: "Description",
@@ -208,7 +216,7 @@ const Roles = () => {
           />
           <Button
             icon={<EditOutlined />}
-            onClick={() => navigate(`/access/users/edit/${record.id}`)}
+            onClick={() => navigate(`/access/roles/edit/${record.id}`)}
             style={{
               backgroundColor: colors.buttonEditBg,
               color: colors.buttonText,
@@ -342,95 +350,105 @@ const Roles = () => {
           borderBottom: "1px solid #444",
         }}
       >
-        <Form
-          form={form}
-          layout="vertical"
-          onFinish={onFinish}
-          initialValues={{
-            status: "active",
-            permission: [],
-          }}
-        >
-          <Form.Item
-            name="name"
-            label="Role Name"
-            rules={[{ required: true, message: "Please enter the role name" }]}
-          >
-            <Input placeholder="Enter role name" disabled={viewMode} />
-          </Form.Item>
-
-          <Form.Item
-            name="description"
-            label="Description"
-            rules={[{ required: true, message: "Please enter description" }]}
-          >
-            <Input.TextArea
-              rows={3}
-              placeholder="Enter description"
-              disabled={viewMode}
-            />
-          </Form.Item>
-
-          <Form.Item
-            name="permission"
-            label="Permissions"
-            rules={[
-              {
-                required: true,
-                message: "Please select at least one permission",
-              },
-            ]}
-          >
-            <Select
-              mode="multiple"
-              disabled={viewMode}
-              placeholder="Select permissions"
+        {roleLoading ? (
+          <div style={{ textAlign: "center", padding: "50px" }}>
+            <p>Loading role data...</p>
+          </div>
+        ) : viewMode && selectedRoleFromStore ? (
+          <RoleViewDetails role={selectedRoleFromStore} />
+        ) : (
+          (action === "add" || selectedRoleFromStore) ? (
+            <Form
+              form={form}
+              layout="vertical"
+              onFinish={onFinish}
+              initialValues={{
+                status: "active",
+                permission: [],
+              }}
             >
-              <Option value="read">Read</Option>
-              <Option value="write">Write</Option>
-              <Option value="update">Update</Option>
-              <Option value="delete">Delete</Option>
-            </Select>
-          </Form.Item>
+              <Form.Item
+                name="name"
+                label="Role Name"
+                rules={[{ required: true, message: "Please enter the role name" }]}
+              >
+                <Input placeholder="Enter role name" disabled={viewMode} />
+              </Form.Item>
 
-          <Form.Item
-            name="status"
-            label="Status"
-            rules={[{ required: true, message: "Please select status" }]}
-          >
-            <Select disabled={viewMode}>
-              <Option value="active">Active</Option>
-              <Option value="inactive">Inactive</Option>
-            </Select>
-          </Form.Item>
+              <Form.Item
+                name="description"
+                label="Description"
+                rules={[{ required: true, message: "Please enter description" }]}
+              >
+                <Input.TextArea
+                  rows={3}
+                  placeholder="Enter description"
+                  disabled={viewMode}
+                />
+              </Form.Item>
 
-          {!viewMode && (
-            <Form.Item>
-              <Row gutter={12}>
-                <Col span={12}>
-                  <Button
-                    onClick={closeDrawer}
-                    style={{ width: "100%", backgroundColor: "#FFFFFF" }}
-                  >
-                    Cancel
-                  </Button>
-                </Col>
-                <Col span={12}>
-                  <Button
-                    type="primary"
-                    htmlType="submit"
-                    style={{
-                      width: "100%",
-                      backgroundColor: colors.secondary,
-                    }}
-                  >
-                    Submit
-                  </Button>
-                </Col>
-              </Row>
-            </Form.Item>
-          )}
-        </Form>
+              <Form.Item
+                name="permission"
+                label="Permissions"
+                rules={[
+                  {
+                    required: true,
+                    message: "Please select at least one permission",
+                  },
+                ]}
+              >
+                <Select
+                  mode="multiple"
+                  disabled={viewMode}
+                  placeholder="Select permissions"
+                >
+                  <Option value="read">Read</Option>
+                  <Option value="write">Write</Option>
+                  <Option value="update">Update</Option>
+                  <Option value="delete">Delete</Option>
+                </Select>
+              </Form.Item>
+
+              <Form.Item
+                name="status"
+                label="Status"
+                rules={[{ required: true, message: "Please select status" }]}
+              >
+                <Select disabled={viewMode}>
+                  <Option value="active">Active</Option>
+                  <Option value="inactive">Inactive</Option>
+                </Select>
+              </Form.Item>
+
+              {!viewMode && (
+                <Form.Item>
+                  <Space>
+                    <Button
+                      onClick={closeDrawer}
+                      style={{ backgroundColor: "#FFFFFF" }}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      type="primary"
+                      htmlType="submit"
+                      loading={loading}
+                      style={{
+                        backgroundColor: colors.secondary,
+                      }}
+                    >
+                      Submit
+                    </Button>
+                  </Space>
+                </Form.Item>
+              )}
+            </Form>
+          ) : (
+            <div style={{ textAlign: "center", padding: "50px" }}>
+              <p>Role data not found.</p>
+            </div>
+          )
+        )}
       </Drawer>
     </div>
   );
