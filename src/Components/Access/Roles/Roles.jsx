@@ -8,6 +8,7 @@ import {
   Space,
   Popconfirm,
   Switch,
+  Checkbox,
 } from "antd";
 const { Option } = Select;
 
@@ -25,16 +26,15 @@ import { useDispatch, useSelector } from "react-redux";
 import {
   fetchRoles,
   fetchRoleById,
-  addRole, 
+  fetchRolePermissions,
+  addRole,
   updateRole,
-  deleteRole, 
+  deleteRole,
   clearSelectedRole,
   updateStatus,
 } from "../../../store/slice/roles/rolesSlice";
 import { useNavigate, useParams } from "react-router-dom";
 import RoleViewDetails from "./RoleViewDetails";
-
-
 
 const Roles = () => {
   usePageTitle("Roles");
@@ -47,6 +47,7 @@ const Roles = () => {
   const selectedRoleFromStore = useSelector(
     (state) => state.roles.selectedRole
   );
+  const permissionsList = useSelector((state) => state.roles.permissionsList);
   const loading = useSelector((state) => state.roles.loading);
   const roleLoading = useSelector((state) => state.roles.roleLoading);
   const error = useSelector((state) => state.roles.error);
@@ -56,10 +57,15 @@ const Roles = () => {
   const [viewMode, setViewMode] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
 
+  const [checkedList, setCheckedList] = useState([]);
+  const [indeterminate, setIndeterminate] = useState(false);
+  const [checkAll, setCheckAll] = useState(false);
+
   const [form] = Form.useForm();
 
   useEffect(() => {
     dispatch(fetchRoles());
+    dispatch(fetchRolePermissions());
   }, [dispatch]);
 
   useEffect(() => {
@@ -81,13 +87,29 @@ const Roles = () => {
     if (selectedRoleFromStore) {
       form.setFieldsValue({
         ...selectedRoleFromStore,
-        status: selectedRoleFromStore.status === 1 || selectedRoleFromStore.status === true ? "active" : "inactive",
-        role_id: Number(selectedRoleFromStore.role_id), 
+        status:
+          selectedRoleFromStore.status === 1 ||
+          selectedRoleFromStore.status === true
+            ? "active"
+            : "inactive",
+        role_id: Number(selectedRoleFromStore.role_id),
+        permissions: selectedRoleFromStore.permissions || [],
       });
-
-    } else if ((action === "edit" || action === "view") && !roleLoading) {
+      setCheckedList(selectedRoleFromStore.permissions || []);
+      updateCheckboxStates(selectedRoleFromStore.permissions || []);
+    } else if (action === "add") {
+      setCheckedList([]);
+      setIndeterminate(false);
+      setCheckAll(false);
+      form.setFieldsValue({ permissions: [] });
     }
   }, [selectedRoleFromStore, form, action, roleLoading]);
+
+  useEffect(() => {
+    if (permissionsList.length > 0) {
+      updateCheckboxStates(checkedList);
+    }
+  }, [permissionsList, checkedList]);
 
   useEffect(() => {
     if (error) {
@@ -100,8 +122,11 @@ const Roles = () => {
     setIsEditing(false);
     setViewMode(false);
     setDrawerVisible(true);
-    dispatch(clearSelectedRole()); 
+    dispatch(clearSelectedRole());
     navigate("/access/roles/add");
+    setCheckedList([]);
+    setIndeterminate(false);
+    setCheckAll(false);
   };
 
   const closeDrawer = () => {
@@ -109,8 +134,11 @@ const Roles = () => {
     setIsEditing(false);
     setViewMode(false);
     form.resetFields();
-    dispatch(clearSelectedRole()); 
+    dispatch(clearSelectedRole());
     navigate("/access/roles");
+    setCheckedList([]);
+    setIndeterminate(false);
+    setCheckAll(false);
   };
 
   const onFinish = async (values) => {
@@ -118,12 +146,16 @@ const Roles = () => {
       const processedValues = {
         ...values,
         status: values.status === "active" ? 1 : 0,
+        permissions: Array.isArray(values.permissions) ? values.permissions : [],
       };
 
       let resultAction;
       if (isEditing && selectedRoleFromStore) {
         resultAction = await dispatch(
-          updateRole({ id: selectedRoleFromStore.id, role: processedValues })
+          updateRole({
+            id: selectedRoleFromStore.id,
+            userFormData: processedValues,
+          })
         );
         if (updateRole.fulfilled.match(resultAction)) {
           toast.success("Role updated successfully");
@@ -160,11 +192,52 @@ const Roles = () => {
     }
   };
 
-  const handleStatusChange = async(checked, record)=>{
-      const newStatus = checked ? 1: 0;
-      await dispatch(updateStatus({id:record.id, status:newStatus}))
-    }
+  const handleStatusChange = async (checked, record) => {
+    const newStatus = checked ? 1 : 0;
+    const resultAction = await dispatch(updateStatus({ id: record.id, status: newStatus }));
+    if (updateStatus.fulfilled.match(resultAction)){
+          toast.success(`Role status updated to ${newStatus === 1 ? 'Active' : 'Inactive'}.`);
+        }else {
+          toast.error(resultAction.payload || "Failed to update role status.");
+        }
+  };
 
+  const allPermissionNames = Array.isArray(permissionsList)
+    ? permissionsList.map((p) => p.name)
+    : [];
+    const allPermissionIds = Array.isArray(permissionsList) ? permissionsList.map((p) => p.id) : [];
+
+  const onCheckboxGroupChange = (list) => {
+    const selectedPermissionIds = permissionsList
+      .filter(p => list.includes(p.name))
+      .map(p => p.id);
+    setCheckedList(list);
+    setIndeterminate(!!list.length && list.length < allPermissionNames.length);
+    setCheckAll(list.length === allPermissionNames.length);
+    form.setFieldsValue({ permissions: selectedPermissionIds });
+  };
+
+  const onCheckAllChange = (e) => {
+    const checked = e.target.checked;
+    const newCheckedListNames = checked ? allPermissionNames : [];
+    const newCheckedListIds = checked ? allPermissionIds : []; 
+    setCheckedList(newCheckedListNames);
+    setIndeterminate(false);
+    setCheckAll(checked);
+
+    form.setFieldsValue({ permissions: newCheckedListIds });
+  };
+
+  const updateCheckboxStates = (currentCheckedList) => {
+    setIndeterminate(
+      !!currentCheckedList.length &&
+        currentCheckedList.length < allPermissionNames.length
+    );
+    setCheckAll(
+      currentCheckedList.length === allPermissionNames.length &&
+        allPermissionNames.length > 0
+    );
+  };
   const columns = [
     {
       title: "Name",
@@ -329,6 +402,7 @@ const Roles = () => {
       </div>
 
       <Drawer
+      
         title={
           <div
             style={{
@@ -356,98 +430,122 @@ const Roles = () => {
           </div>
         ) : viewMode && selectedRoleFromStore ? (
           <RoleViewDetails role={selectedRoleFromStore} />
-        ) : (
-          (action === "add" || selectedRoleFromStore) ? (
-            <Form
-              form={form}
-              layout="vertical"
-              onFinish={onFinish}
-              initialValues={{
-                status: "active",
-                permission: [],
-              }}
+        ) : action === "add" || selectedRoleFromStore ? (
+          <Form
+            form={form}
+            layout="vertical"
+            onFinish={onFinish}
+            initialValues={{
+              status: "active",
+              permission: [],
+            }}
+          >
+            <Form.Item
+              name="name"
+              label="Role Name"
+              rules={[
+                { required: true, message: "Please enter the role name" },
+              ]}
             >
-              <Form.Item
-                name="name"
-                label="Role Name"
-                rules={[{ required: true, message: "Please enter the role name" }]}
-              >
-                <Input placeholder="Enter role name" disabled={viewMode} />
-              </Form.Item>
+              <Input placeholder="Enter role name" disabled={viewMode} />
+            </Form.Item>
 
-              <Form.Item
-                name="description"
-                label="Description"
-                rules={[{ required: true, message: "Please enter description" }]}
-              >
-                <Input.TextArea
-                  rows={3}
-                  placeholder="Enter description"
-                  disabled={viewMode}
-                />
-              </Form.Item>
+            <Form.Item
+              name="description"
+              label="Description"
+              rules={[{ required: true, message: "Please enter description" }]}
+            >
+              <Input.TextArea
+                rows={3}
+                placeholder="Enter description"
+                disabled={viewMode}
+              />
+            </Form.Item>
 
-              <Form.Item
-                name="permission"
-                label="Permissions"
-                rules={[
-                  {
-                    required: true,
-                    message: "Please select at least one permission",
-                  },
-                ]}
+            <Form.Item
+              name="permissions"
+              label="Permissions"
+              rules={[
+                {
+                  required: true,
+                  message: "Please select at least one permission",
+                },
+              ]}
+            >
+              <div
+                style={{
+                  borderBottom: "1px solid #E9E9E9",
+                  paddingBottom: "10px",
+                  marginBottom: "10px",
+                }}
               >
-                <Select
-                  mode="multiple"
+                <Checkbox
+                  indeterminate={indeterminate}
+                  onChange={onCheckAllChange}
+                  checked={checkAll}
                   disabled={viewMode}
-                  placeholder="Select permissions"
                 >
-                  <Option value="read">Read</Option>
-                  <Option value="write">Write</Option>
-                  <Option value="update">Update</Option>
-                  <Option value="delete">Delete</Option>
-                </Select>
-              </Form.Item>
+                  All
+                </Checkbox>
+              </div>
+              <Checkbox.Group
+                options={
+                  Array.isArray(permissionsList)
+                    ? permissionsList.map((p) => ({
+                        label: p.name,
+                        value: p.name,
+                      }))
+                    : []
+                }
+                value={checkedList}
+                onChange={onCheckboxGroupChange}
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(2, 1fr)",
+                  gap: "10px",
+                }}
+                disabled={viewMode}
+              />
+            </Form.Item>
 
-              <Form.Item
-                name="status"
-                label="Status"
-                rules={[{ required: true, message: "Please select status" }]}
-              >
-                <Select disabled={viewMode}>
-                  <Option value="active">Active</Option>
-                  <Option value="inactive">Inactive</Option>
-                </Select>
-              </Form.Item>
+            <Form.Item
+              name="status"
+              label="Status"
+              rules={[{ required: true, message: "Please select status" }]}
+            >
+              <Select disabled={viewMode}>
+                <Option value="active">Active</Option>
+                <Option value="inactive">Inactive</Option>
+              </Select>
+            </Form.Item>
 
-              {!viewMode && (
-                <Form.Item>
-                  <Space>
-                    <Button
-                      onClick={closeDrawer}
-                      style={{ backgroundColor: "#FFFFFF" }}
-                    >
-                      Cancel
-                    </Button>
-                    <Button
-                      type="primary"
-                      htmlType="submit"
-                      loading={loading}
-                      style={{
-                        backgroundColor: colors.secondary,
-                      }}
-                    >
-                      Submit
-                    </Button>
-                  </Space>
-                </Form.Item>
-              )}
-            </Form>
-          ) : (
-            <div style={{ textAlign: "center", padding: "50px" }}>
-              <p>Role data not found.</p>
-            </div>
-          )
+            {!viewMode && (
+              <Form.Item>
+                <Space>
+                  <Button
+                    onClick={closeDrawer}
+                    style={{ backgroundColor: "#FFFFFF" }}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="primary"
+                    htmlType="submit"
+                    loading={loading}
+                    style={{
+                      backgroundColor: colors.secondary,
+                    }}
+                  >
+                    Submit
+                  </Button>
+                </Space>
+              </Form.Item>
+            )}
+          </Form>
+        ) : (
+          <div style={{ textAlign: "center", padding: "50px" }}>
+            <p>Role data not found.</p>
+          </div>
         )}
       </Drawer>
     </div>

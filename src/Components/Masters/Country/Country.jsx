@@ -23,65 +23,80 @@ import {
 } from "@ant-design/icons";
 import colors from "../../../theme/color";
 import usePageTitle from "../../../hooks/usePageTitle";
-
-
-const staticCountries = [
-  {
-    id: 1,
-    name: "United States",
-    code: "US",
-    status: "active",
-  },
-  {
-    id: 2,
-    name: "United Kingdom",
-    code: "UK",
-    status: "active",
-  },
-  {
-    id: 3,
-    name: "Canada",
-    code: "CA",
-    status: "active",
-  },
-  {
-    id: 4,
-    name: "Australia",
-    code: "AU",
-    status: "active",
-  },
-  {
-    id: 5,
-    name: "Germany",
-    code: "DE",
-    status: "inactive",
-  },
-  {
-    id: 6,
-    name: "France",
-    code: "FR",
-    status: "active",
-  },
-  {
-    id: 7,
-    name: "Japan",
-    code: "JP",
-    status: "inactive",
-  },
-];
+import {
+  fetchCountries,
+  fetchCountryById,
+  addCountry,
+  updateCountry,
+  deleteCountry,
+  clearSelectedCountry,
+  updateCountryStatus,
+} from "../../../store/slice/country/countrySlice";
+import { useNavigate, useParams } from "react-router-dom";
+import { useSelector } from "react-redux";
 
 const Country = () => {
-  usePageTitle("Country")
-  const [countries, setCountries] = useState(staticCountries);
-  const [loading, setLoading] = useState(false);
-  
+  usePageTitle("Country");
+
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const { action, id } = useParams();
+
+  const countries = useSelector((state)=> state.countries.countries);
+  const selectedCountryFromStore = useSelector((state)=>state.countries.selectedCountry);
+  const loading = useSelector((state) => state.countries.loading);
+    const countryLoading = useSelector(
+      (state) => state.countries.countryLoading
+    );
+    const error = useSelector((state) => state.countries.error);
+
   const [drawerVisible, setDrawerVisible] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [selectedCountry, setSelectedCountry] = useState(null);
   const [viewMode, setViewMode] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  
+
   const [form] = Form.useForm();
+
+    useEffect(() => {
+      dispatch(fetchCountries());
+    }, [dispatch]);
+  
+    useEffect(() => {
+      if (action === "add") {
+        showDrawer();
+      } else if ((action === "edit" || action === "view") && id) {
+        dispatch(fetchCountryById(id));
+        setDrawerVisible(true);
+        setViewMode(action === "view");
+        setIsEditing(action === "edit");
+      } else {
+        if (drawerVisible) {
+          closeDrawer();
+        }
+      }
+    }, [action, id, dispatch]);
+  
+    useEffect(() => {
+      if (selectedCountryFromStore) {
+        form.setFieldsValue({
+          ...selectedCountryFromStore,
+          status:
+            selectedCountryFromStore.status === 1 ||
+            selectedCountryFromStore.status === true
+              ? "active"
+              : "inactive",
+          role_id: Number(selectedCountryFromStore.role_id),
+        });
+      } else if ((action === "edit" || action === "view") && !permissionLoading) {
+      }
+    }, [selectedPermissionFromStore, form, action, permissionLoading]);
+  
+    useEffect(() => {
+      if (error) {
+        toast.error(error);
+      }
+    }, [error]);
 
   const showDrawer = () => {
     form.resetFields();
@@ -103,7 +118,9 @@ const Country = () => {
     try {
       if (isEditing && selectedCountry) {
         const updated = countries.map((country) =>
-          country.id === selectedCountry.id ? { ...country, ...values } : country
+          country.id === selectedCountry.id
+            ? { ...country, ...values }
+            : country
         );
         setCountries(updated);
         toast.success("Country updated successfully");
@@ -176,8 +193,8 @@ const Country = () => {
     {
       title: "Actions",
       key: "actions",
-      width:150,
-      fixed:"right",
+      width: 150,
+      fixed: "right",
       render: (_, record) => (
         <Space>
           <Button
@@ -248,18 +265,18 @@ const Country = () => {
           </h2>
 
           <Button
-              icon={<PlusOutlined />}
-              type="primary"
-              size="middle"
-              style={{
-                backgroundColor: colors.secondary,
-                border: "none",
-                padding: "0 16px",
-              }}
-              onClick={showDrawer}
-            >
-              Add Country
-            </Button>
+            icon={<PlusOutlined />}
+            type="primary"
+            size="middle"
+            style={{
+              backgroundColor: colors.secondary,
+              border: "none",
+              padding: "0 16px",
+            }}
+            onClick={showDrawer}
+          >
+            Add Country
+          </Button>
         </div>
       </div>
       <div
@@ -270,28 +287,33 @@ const Country = () => {
           boxShadow: "0 4px 10px rgba(0,0,0,0.06)",
         }}
       >
-                  <div style={{marginBottom:"16px", display: "flex", justifyContent:"flex-end" }}>
-            <Input.Search
-              placeholder="Search by name or code"
-              allowClear
-              onChange={(e) => setSearchTerm(e.target.value.toLowerCase())}
-              style={{ width: 250 }}
-            />
-          </div>
-        <div style={{ overflowX:"auto" }}>
-
-        <Table
-          dataSource={countries.filter(
-            (country) =>
-              country.name.toLowerCase().includes(searchTerm) ||
-              country.code.toLowerCase().includes(searchTerm)
-          )}
-          columns={columns}
-          loading={loading}
-          rowKey="id"
-          scroll={{x:900}}
-          pagination={{ pageSize: 10 }}
-        />
+        <div
+          style={{
+            marginBottom: "16px",
+            display: "flex",
+            justifyContent: "flex-end",
+          }}
+        >
+          <Input.Search
+            placeholder="Search by name or code"
+            allowClear
+            onChange={(e) => setSearchTerm(e.target.value.toLowerCase())}
+            style={{ width: 250 }}
+          />
+        </div>
+        <div style={{ overflowX: "auto" }}>
+          <Table
+            dataSource={countries.filter(
+              (country) =>
+                country.name.toLowerCase().includes(searchTerm) ||
+                country.code.toLowerCase().includes(searchTerm)
+            )}
+            columns={columns}
+            loading={loading}
+            rowKey="id"
+            scroll={{ x: 900 }}
+            pagination={{ pageSize: 10 }}
+          />
         </div>
       </div>
 
@@ -304,7 +326,11 @@ const Country = () => {
               color: "#fff",
             }}
           >
-            {viewMode ? "View Country" : isEditing ? "Edit Country" : "Add New Country"}
+            {viewMode
+              ? "View Country"
+              : isEditing
+              ? "Edit Country"
+              : "Add New Country"}
           </div>
         }
         width={360}
@@ -330,7 +356,7 @@ const Country = () => {
             label="Country Name"
             rules={[
               { required: true, message: "Please enter the country name" },
-              { min: 2, message: "Country name must be at least 2 characters" }
+              { min: 2, message: "Country name must be at least 2 characters" },
             ]}
           >
             <Input placeholder="Enter country name" disabled={viewMode} />
@@ -341,18 +367,22 @@ const Country = () => {
             label="Country Code"
             rules={[
               { required: true, message: "Please enter country code" },
-              { min: 2, max: 2, message: "Country code must be exactly 2 characters" },
+              {
+                min: 2,
+                max: 2,
+                message: "Country code must be exactly 2 characters",
+              },
               {
                 pattern: /^[A-Z]+$/,
-                message: "Country code must be uppercase letters only"
-              }
+                message: "Country code must be uppercase letters only",
+              },
             ]}
           >
-            <Input 
-              placeholder="Enter country code (e.g., US, UK)" 
+            <Input
+              placeholder="Enter country code (e.g., US, UK)"
               disabled={viewMode}
               maxLength={2}
-              style={{ textTransform: 'uppercase' }}
+              style={{ textTransform: "uppercase" }}
             />
           </Form.Item>
 

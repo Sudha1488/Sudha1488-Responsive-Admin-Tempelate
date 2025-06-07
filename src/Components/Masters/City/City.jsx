@@ -35,7 +35,6 @@ const staticStates = [
   { id: 8, name: "Bavaria", code: "BAV", countryId: 5 },
 ];
 
-// Dummy city data
 const staticCities = [
   { id: 1, name: "Los Angeles", code: "LA", stateId: 1, status: "active" },
   { id: 2, name: "Dallas", code: "DAL", stateId: 2, status: "inactive" },

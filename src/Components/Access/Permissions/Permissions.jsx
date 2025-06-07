@@ -11,6 +11,7 @@ import {
   Row,
   Col,
   Popconfirm,
+  Checkbox
 } from "antd";
 const { Option } = Select;
 
@@ -174,6 +175,11 @@ const Permissions = () => {
   const handleStatusChange = async (checked, record) => {
     const newStatus = checked ? 1 : 0;
     await dispatch(updateStatus({ id: record.id, status: newStatus }));
+    if (updateStatus.fulfilled.match(resultAction)){
+          toast.success(`Permission status updated to ${newStatus === 1 ? 'Active' : 'Inactive'}.`);
+        }else {
+          toast.error(resultAction.payload || "Failed to update permission status.");
+        }
   };
 
   const columns = [

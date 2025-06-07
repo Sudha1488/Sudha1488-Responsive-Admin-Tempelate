@@ -36,7 +36,11 @@ export const fetchRoleById = createAsyncThunk(
       });
 
       if (res.data?.data) {
-        return res.data.data;
+        const roleData = res.data.data;
+        if (roleData.permissions && Array.isArray(roleData.permissions)) {
+          roleData.permissions = roleData.permissions.map(p => p.name);
+        }
+        return roleData;
       }
       return null;
     } catch (err) {
@@ -56,8 +60,8 @@ export const fetchRolePermissions = createAsyncThunk("roles/fetchRolePermissions
       }
     });
 
-    if(res.data?.data){
-      return res.data.data;
+    if (res.data?.data?.data && Array.isArray(res.data.data.data)) {
+        return res.data.data.data;
     }
     return null;
   } catch (error) {
@@ -180,6 +184,7 @@ export const updateStatus = createAsyncThunk(
 const initialState = {
   roles: [],
   selectedRole: null,
+  permissionsList: [],
   loading: false,
   roleLoading: false,
   error: null,
@@ -226,6 +231,16 @@ const rolesSlice = createSlice({
       .addCase(fetchRoleById.rejected, (state, action) => {
         state.roleLoading = false;
         state.selectedRole = null;
+        state.error = action.payload || action.error.message;
+      })
+      .addCase(fetchRolePermissions.pending, (state) => {
+        state.error = null;
+      })
+      .addCase(fetchRolePermissions.fulfilled, (state, action) => {
+        state.permissionsList = action.payload;
+        state.error = null;
+      })
+      .addCase(fetchRolePermissions.rejected, (state, action) => {
         state.error = action.payload || action.error.message;
       })
       .addCase(addRole.pending, (state) => {

@@ -1,11 +1,12 @@
 import React from 'react';
-import { Card, Tag, Typography, Row, Col } from 'antd';
+import { Card, Tag, Typography, Row, Col, Divider } from 'antd';
 import {
   IdcardOutlined,
   FileTextOutlined,
   KeyOutlined,
   CheckCircleOutlined,
   CloseCircleOutlined,
+  InfoCircleOutlined
 } from '@ant-design/icons';
 import colors from '../../../theme/color';
 
@@ -25,7 +26,7 @@ const RoleViewDetails = ({ role }) => {
           boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
         }}
       >
-        <IdcardOutlined style={{ fontSize: '64px', color: '#d9d9d9', marginBottom: '20px' }} />
+        <InfoCircleOutlined style={{ fontSize: '64px', color: '#d9d9d9', marginBottom: '20px' }} />
         <Title level={4} type="secondary" style={{ marginBottom: '8px' }}>
           No role data to display
         </Title>
@@ -36,21 +37,18 @@ const RoleViewDetails = ({ role }) => {
 
   const isActive = role.status === 1 || role.status === true;
 
-  const InfoRow = ({ icon, label, value, copyable = false }) => (
+  const InfoRow = ({ icon, label, children, renderValue }) => (
     <Row style={{ marginBottom: '16px', alignItems: 'flex-start' }}>
       <Col xs={24} sm={8} md={6}>
         <div style={{ display: 'flex', alignItems: 'center' }}>
           {icon && <span style={{ marginRight: '10px', color: colors.primary }}>{icon}</span>}
-          <Text strong style={{ color: '#595959' }}>{label}:</Text>
+          <Text strong style={{ color: '#595959', fontSize: '15px' }}>{label}:</Text>
         </div>
       </Col>
       <Col xs={24} sm={16} md={18}>
-        <Text
-          copyable={copyable ? { tooltips: ['copy', 'copied!'] } : false}
-          style={{ fontSize: '15px', color: '#262626', whiteSpace: 'normal', wordBreak: 'break-word' }}
-        >
-          {value || 'Not provided'}
-        </Text>
+        {children || renderValue || (
+          <Text style={{ fontSize: '15px', color: '#262626' }}>Not provided</Text>
+        )}
       </Col>
     </Row>
   );
@@ -59,84 +57,121 @@ const RoleViewDetails = ({ role }) => {
     <div style={{ padding: '20px' }}>
       <Card
         style={{
-          borderRadius: '12px',
-          boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
-          maxWidth: '800px',
+          borderRadius: '16px',
+          boxShadow: '0 8px 24px rgba(0,0,0,0.1)',
+          maxWidth: '850px',
           margin: '0 auto',
-          background: '#fff',
+          background: '#ffffff',
           overflow: 'hidden',
         }}
-        bodyStyle={{ padding: '30px' }}
+        bodyStyle={{ padding: '40px' }}
       >
         <div
           style={{
             display: 'flex',
             alignItems: 'center',
             marginBottom: '30px',
-            paddingBottom: '20px',
-            borderBottom: '1px solid #f0f0f0',
+            paddingBottom: '25px',
+            borderBottom: '1px solid #e8e8e8',
           }}
         >
           <div
             style={{
-              minWidth: '100px',
-              height: '100px',
+              minWidth: '90px',
+              height: '90px',
               borderRadius: '50%',
-              backgroundColor: '#f5f5f5',
-              border: '2px dashed #d9d9d9',
+              backgroundColor: '#f0f2f5',
+              border: '2px solid #d9d9d9',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               marginRight: '25px',
+              boxShadow: '0 2px 6px rgba(0,0,0,0.05)',
             }}
           >
-            <IdcardOutlined style={{ fontSize: '40px', color: '#8c8c8c' }} />
+            <IdcardOutlined style={{ fontSize: '36px', color: colors.primary }} />
           </div>
 
           <div style={{ flex: 1 }}>
-            <Title level={2} style={{ margin: '0 0 8px 0', color: '#262626' }}>
+            <Title level={2} style={{ margin: '0 0 6px 0', color: '#262626', fontSize: '28px' }}>
               {role.name || 'Role Name Not Provided'}
             </Title>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
-              <Tag color="blue" style={{ padding: '4px 10px', fontSize: '13px' }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
+              <Tag color="blue" style={{ padding: '6px 12px', fontSize: '14px', borderRadius: '4px' }}>
                 ROLE
               </Tag>
-              <Tag color={isActive ? 'green' : 'red'} style={{ padding: '4px 10px', fontSize: '13px' }}>
+              <Tag color={isActive ? 'green' : 'red'} style={{ padding: '6px 12px', fontSize: '14px', borderRadius: '4px' }}>
                 {isActive ? 'ACTIVE' : 'INACTIVE'}
               </Tag>
+              {role.createdAt && (
+                <Tag color="default" style={{ padding: '6px 12px', fontSize: '14px', borderRadius: '4px' }}>
+                  Created: {new Date(role.createdAt).toLocaleDateString()}
+                </Tag>
+              )}
             </div>
           </div>
         </div>
 
         <div style={{ padding: '0 10px' }}>
+          <Title level={4} style={{ marginBottom: '25px', color: colors.primary }}>
+            Role Details
+          </Title>
+
           <InfoRow
             icon={<IdcardOutlined />}
             label="Role ID"
-            value={role.id || 'Not provided'}
-            copyable={true}
+            renderValue={
+              <Text copyable={{ tooltips: ['copy', 'copied!'] }} style={{ fontSize: '15px', color: '#262626' }}>
+                {role.id || 'Not provided'}
+              </Text>
+            }
           />
 
           <InfoRow
             icon={<FileTextOutlined />}
             label="Description"
-            value={role.description}
+            renderValue={
+              <Text style={{ fontSize: '15px', color: '#262626', whiteSpace: 'normal', wordBreak: 'break-word' }}>
+                {role.description || 'Not provided'}
+              </Text>
+            }
           />
 
           <InfoRow
             icon={<KeyOutlined />}
             label="Permissions"
-            value={
-              role.permission && Array.isArray(role.permission) && role.permission.length > 0
-                ? role.permission.join(", ")
-                : "None"
-            }
-          />
+          >
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+              {role.permissions && Array.isArray(role.permissions) && role.permissions.length > 0
+                ? role.permissions.map((permissionName, index) => (
+                    <Tag key={index} color="geekblue" style={{ fontSize: '13px', padding: '4px 8px', borderRadius: '4px' }}>
+                      {permissionName.replace(/_/g, ' ').toUpperCase()}
+                    </Tag>
+                  ))
+                : <Text style={{ fontSize: '15px', color: '#262626' }}>None</Text>}
+            </div>
+          </InfoRow>
 
           <InfoRow
-            icon={isActive ? <CheckCircleOutlined /> : <CloseCircleOutlined />}
+            icon={isActive ? <CheckCircleOutlined style={{ color: 'green' }} /> : <CloseCircleOutlined style={{ color: 'red' }} />}
             label="Status"
-            value={isActive ? "Active" : "Inactive"}
+            renderValue={
+              <Text style={{ fontSize: '15px', color: isActive ? 'green' : 'red' }}>
+                {isActive ? "Active" : "Inactive"}
+              </Text>
+            }
           />
+          {role.updatedAt && (
+             <InfoRow
+               icon={<FileTextOutlined />}
+               label="Last Updated"
+               renderValue={
+                 <Text style={{ fontSize: '15px', color: '#262626' }}>
+                   {new Date(role.updatedAt).toLocaleDateString()}
+                 </Text>
+               }
+             />
+           )}
         </div>
       </Card>
     </div>

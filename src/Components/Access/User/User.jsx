@@ -37,8 +37,10 @@ import {
   clearSelectedUser,
   updateStatus,
 } from "../../../store/slice/users/usersSlice";
+import { fetchRoles } from "../../../store/slice/helper/helperSlice";
 
-import UserViewDetails from './UserViewDetails'; 
+import UserViewDetails from "./UserViewDetails";
+import moment from "moment";
 
 const User = () => {
   usePageTitle("User");
@@ -47,10 +49,14 @@ const User = () => {
   const { action, id } = useParams();
 
   const users = useSelector((state) => state.users.users);
-  const selectedUserFromStore = useSelector((state) => state.users.selectedUser);
+  const selectedUserFromStore = useSelector(
+    (state) => state.users.selectedUser
+  );
   const loading = useSelector((state) => state.users.loading);
   const userLoading = useSelector((state) => state.users.userLoading);
   const error = useSelector((state) => state.users.error);
+  const roles = useSelector((state) => state.helper.rolesList);
+  const rolesLoading = useSelector((state) => state.helper.loading);
 
   const [drawerVisible, setDrawerVisible] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -62,12 +68,14 @@ const User = () => {
 
   useEffect(() => {
     dispatch(fetchUsers());
+    dispatch(fetchRoles());
   }, [dispatch]);
 
   useEffect(() => {
     if (action === "add") {
       showDrawer();
     } else if ((action === "edit" || action === "view") && id) {
+      dispatch(clearSelectedUser());
       dispatch(fetchUserById(id));
       setDrawerVisible(true);
       setViewMode(action === "view");
@@ -79,29 +87,25 @@ const User = () => {
     }
   }, [action, id, dispatch]);
 
-  useEffect(() => {
-    if (selectedUserFromStore) {
-      form.setFieldsValue({
-        ...selectedUserFromStore,
-        status: selectedUserFromStore.status === 1 || selectedUserFromStore.status === true ? "active" : "inactive",
-        role_id: Number(selectedUserFromStore.role_id), 
-      });
-
-      if (selectedUserFromStore.profileImg) {
-        setFileList([
-          {
-            uid: "-1",
-            name: "profile_img",
-            status: "done",
-            url: selectedUserFromStore.profileImg,
-          },
-        ]);
-      } else {
-        setFileList([]);
-      }
-    } else if ((action === "edit" || action === "view") && !userLoading) {
-    }
-  }, [selectedUserFromStore, form, action, userLoading]);
+ // Inside User.js
+useEffect(() => {
+  if (selectedUserFromStore) {
+    form.setFieldsValue({
+      ...selectedUserFromStore,
+      status:
+        selectedUserFromStore.status === 1 ||
+        selectedUserFromStore.status === true
+          ? "active"
+          : "inactive",
+      role_id: Number(selectedUserFromStore.roleId?.id),
+      // This is the line we modified before
+      date_of_birth: selectedUserFromStore.dateOfBirth
+        ? moment(selectedUserFromStore.dateOfBirth).format("YYYY-MM-DD")
+        : undefined,
+    });
+    // ... rest of your useEffect
+  }
+}, [selectedUserFromStore, form, action, userLoading]); // userLoading dependency can be removed if not directly causing re-renders related to this.
 
   useEffect(() => {
     if (error) {
@@ -140,17 +144,23 @@ const User = () => {
       };
 
       Object.keys(processedValues).forEach((key) => {
-        if (key !== "profile_img" && processedValues[key] !== undefined && processedValues[key] !== null) {
+        if (
+          key !== "profile_img" &&
+          processedValues[key] !== undefined &&
+          processedValues[key] !== null
+        ) {
           formData.append(key, String(processedValues[key]));
         }
       });
 
       if (fileList.length > 0 && fileList[0].originFileObj) {
         formData.append("profile_img", fileList[0].originFileObj);
-      } 
+      }
 
       if (isEditing && selectedUserFromStore) {
-        const resultAction = await dispatch(updateUser({ id: selectedUserFromStore.id, user: formData }));
+        const resultAction = await dispatch(
+          updateUser({ id: selectedUserFromStore.id, user: formData })
+        );
         if (updateUser.fulfilled.match(resultAction)) {
           toast.success("User updated successfully");
           closeDrawer();
@@ -204,10 +214,16 @@ const User = () => {
     return false;
   };
 
-  const handleStatusChange = async(checked, record)=>{
-    const newStatus = checked ? 1: 0;
-    await dispatch(updateStatus({id:record.id, status:newStatus}))
-  }
+  const handleStatusChange = async (checked, record) => {
+    const newStatus = checked ? 1 : 0;
+    const resultAction = await dispatch(updateStatus({ id: record.id, status: newStatus }));
+
+    if (updateStatus.fulfilled.match(resultAction)){
+      toast.success(`User status updated to ${newStatus === 1 ? 'Active' : 'Inactive'}.`);
+    }else {
+      toast.error(resultAction.payload || "Failed to update user status.");
+    }
+  };
 
   const columns = [
     {
@@ -232,18 +248,18 @@ const User = () => {
     },
     {
       title: "Role",
-      dataIndex: "role_id",
-      key: "role_id",
+      dataIndex: "roleId",
+      key: "roleId",
       width: 100,
-      render: (role_id) => {
+      render: (roleIdObject) => {
         const roles = {
           1: "Admin",
           2: "User",
           3: "Manager",
         };
-        return roles[role_id] || "Unknown";
+        return roleIdObject?.name || "Unknown";
       },
-      sorter: (a, b) => a.role_id - b.role_id,
+      sorter: (a, b) => (a.roleId?.name || '').localeCompare(b.roleId?.name || ''),
     },
     {
       title: "Status",
@@ -421,160 +437,207 @@ const User = () => {
         }}
       >
         {userLoading ? (
-          <div style={{ textAlign: 'center', padding: '50px' }}>
+          <div style={{ textAlign: "center", padding: "50px" }}>
             <p>Loading user data...</p>
           </div>
         ) : viewMode && selectedUserFromStore ? (
           <UserViewDetails user={selectedUserFromStore} />
-        ) : (
-          (action === "add" || selectedUserFromStore) ? (
-            <Form
-              form={form}
-              layout="vertical"
-              onFinish={onFinish}
-              initialValues={{
-                status: "active",
-                role_id: 2,
-              }}
-            >
-              <Row gutter={16}>
-                <Col span={12}>
-                  <Form.Item name="name" label="Name" rules={[{ required: true, message: "Please enter the name" }]}>
-                    <Input placeholder="Enter full name" disabled={viewMode} />
-                  </Form.Item>
-                </Col>
+        ) : action === "add" || selectedUserFromStore ? (
+          <Form
+            form={form}
+            layout="vertical"
+            onFinish={onFinish}
+            initialValues={{
+              status: "active",
+            }}
+          >
+            <Row gutter={16}>
+              <Col span={12}>
+                <Form.Item
+                  name="name"
+                  label="Name"
+                  rules={[{ required: true, message: "Please enter the name" }]}
+                >
+                  <Input placeholder="Enter full name" disabled={viewMode} />
+                </Form.Item>
+              </Col>
 
-                <Col span={12}>
-                  <Form.Item name="email" label="Email" rules={[
+              <Col span={12}>
+                <Form.Item
+                  name="email"
+                  label="Email"
+                  rules={[
                     { required: true, message: "Please enter the email" },
                     { type: "email", message: "Please enter a valid email" },
-                  ]}>
-                    <Input placeholder="Enter email" disabled={viewMode} />
-                  </Form.Item>
-                </Col>
+                  ]}
+                >
+                  <Input placeholder="Enter email" disabled={viewMode} />
+                </Form.Item>
+              </Col>
 
-                <Col span={12}>
-                  <Form.Item name="phone" label="Phone" rules={[{ required: true, message: "Please enter the phone no." }]}>
-                    <Input placeholder="Enter phone number" disabled={viewMode} />
-                  </Form.Item>
-                </Col>
+              <Col span={12}>
+                <Form.Item
+                  name="phone"
+                  label="Phone"
+                  rules={[
+                    { required: true, message: "Please enter the phone no." },
+                  ]}
+                >
+                  <Input placeholder="Enter phone number" disabled={viewMode} />
+                </Form.Item>
+              </Col>
 
+              <Col span={12}>
+                <Form.Item name="profile_img" label="Profile Image">
+                  <Upload
+                    fileList={fileList}
+                    onChange={handleFileChange}
+                    beforeUpload={beforeUpload}
+                    maxCount={1}
+                    accept="image/*"
+                    disabled={viewMode}
+                    listType="picture-card"
+                  >
+                    {!viewMode && fileList.length < 1 && (
+                      <div>
+                        <PlusOutlined />
+                        <div style={{ marginTop: 8 }}>Upload</div>
+                      </div>
+                    )}
+                  </Upload>
+                </Form.Item>
+              </Col>
+
+              {!isEditing && (
                 <Col span={12}>
-                  <Form.Item name="profile_img" label="Profile Image">
-                    <Upload
-                      fileList={fileList}
-                      onChange={handleFileChange}
-                      beforeUpload={beforeUpload}
-                      maxCount={1}
-                      accept="image/*"
+                  <Form.Item
+                    name="password"
+                    label="Password"
+                    rules={[
+                      { required: true, message: "Please enter the password" },
+                    ]}
+                  >
+                    <Input.Password
+                      placeholder="Enter password"
                       disabled={viewMode}
-                      listType="picture-card"
-                    >
-                      {!viewMode && fileList.length < 1 && (
-                        <div>
-                          <PlusOutlined />
-                          <div style={{ marginTop: 8 }}>Upload</div>
-                        </div>
-                      )}
-                    </Upload>
+                    />
                   </Form.Item>
                 </Col>
+              )}
 
-                {!isEditing && (
+              <Col span={12}>
+                <Form.Item name="date_of_birth" label="Date of Birth">
+                  <Input
+                    type="date"
+                    placeholder="Select date of birth"
+                    disabled={viewMode}
+                  />
+                </Form.Item>
+              </Col>
+
+              {action === "add" && (
+                <>
                   <Col span={12}>
-                    <Form.Item name="password" label="Password" rules={[{ required: true, message: "Please enter the password" }]}>
-                      <Input.Password placeholder="Enter password" disabled={viewMode} />
+                    <Form.Item name="country_id" label="Country">
+                      <Input placeholder="Enter country" />
                     </Form.Item>
                   </Col>
-                )}
 
-                <Col span={12}>
-                  <Form.Item name="date_of_birth" label="Date of Birth">
-                    <Input type="date" placeholder="Select date of birth" disabled={viewMode} />
-                  </Form.Item>
-                </Col>
+                  <Col span={12}>
+                    <Form.Item name="state_id" label="State">
+                      <Input placeholder="Enter state" />
+                    </Form.Item>
+                  </Col>
 
-                {action === "add" && (
-                  <>
-                    <Col span={12}>
-                      <Form.Item name="country_id" label="Country">
-                        <Input placeholder="Enter country" />
-                      </Form.Item>
-                    </Col>
-
-                    <Col span={12}>
-                      <Form.Item name="state_id" label="State">
-                        <Input placeholder="Enter state" />
-                      </Form.Item>
-                    </Col>
-
-                    <Col span={12}>
-                      <Form.Item name="city_id" label="City">
-                        <Input placeholder="Enter city" />
-                      </Form.Item>
-                    </Col>
-                  </>
-                )}
-
-                <Col span={12}>
-                  <Form.Item name="role_id" label="Role" rules={[{ required: true, message: "Please select a role" }]}>
-                    <Select disabled={viewMode}>
-                      <Option value={1}>Admin</Option>
-                      <Option value={2}>User</Option>
-                      <Option value={3}>Manager</Option>
-                    </Select>
-                  </Form.Item>
-                </Col>
-
-                <Col span={12}>
-                  <Form.Item name="status" label="Status" rules={[{ required: true, message: "Please select status" }]}>
-                    <Select disabled={viewMode}>
-                      <Option value="active">Active</Option>
-                      <Option value="inactive">Inactive</Option>
-                    </Select>
-                  </Form.Item>
-                </Col>
-
-                <Col span={24}>
-                  <Form.Item name="address" label="Address">
-                    <Input.TextArea rows={3} placeholder="Enter full address" disabled={viewMode} />
-                  </Form.Item>
-                </Col>
-              </Row>
-
-              {!viewMode && (
-                <Form.Item>
-                  <Row gutter={12}>
-                    <Col span={12}>
-                      <Button
-                        onClick={closeDrawer}
-                        style={{ width: "100%", backgroundColor: "#FFFFFF" }}
-                      >
-                        Cancel
-                      </Button>
-                    </Col>
-                    <Col span={12}>
-                      <Button
-                        type="primary"
-                        htmlType="submit"
-                        loading={loading}
-                        style={{
-                          width: "100%",
-                          backgroundColor: colors.secondary,
-                        }}
-                      >
-                        Submit
-                      </Button>
-                    </Col>
-                  </Row>
-                </Form.Item>
+                  <Col span={12}>
+                    <Form.Item name="city_id" label="City">
+                      <Input placeholder="Enter city" />
+                    </Form.Item>
+                  </Col>
+                </>
               )}
-            </Form>
-          ) : (
-            <div style={{ textAlign: 'center', padding: '50px' }}>
-              <p>User data not found.</p>
-            </div>
-          )
+
+              <Col span={12}>
+                <Form.Item
+                  name="role_id"
+                  label="Role"
+                  rules={[{ required: true, message: "Please select a role" }]}
+                >
+                  <Select
+                    disabled={viewMode || rolesLoading}
+                    showSearch
+                    placeholder="Select a role"
+                    optionFilterProp="children"
+                    filterOption={(input, option)=>
+                    (option?.children || '').toLowerCase().includes(input.toLowerCase())
+                    }
+                    loading={rolesLoading}
+                  >
+                    {roles.map((role)=>(
+                      <Option key={role.id} value={role.id}>
+                        {role.name}
+                      </Option>
+                    ))}
+                  </Select>
+                </Form.Item>
+              </Col>
+
+              <Col span={12}>
+                <Form.Item
+                  name="status"
+                  label="Status"
+                  rules={[{ required: true, message: "Please select status" }]}
+                >
+                  <Select disabled={viewMode}>
+                    <Option value="active">Active</Option>
+                    <Option value="inactive">Inactive</Option>
+                  </Select>
+                </Form.Item>
+              </Col>
+
+              <Col span={24}>
+                <Form.Item name="address" label="Address">
+                  <Input.TextArea
+                    rows={3}
+                    placeholder="Enter full address"
+                    disabled={viewMode}
+                  />
+                </Form.Item>
+              </Col>
+            </Row>
+
+            {!viewMode && (
+              <Form.Item>
+                <Row gutter={12}>
+                  <Col span={12}>
+                    <Button
+                      onClick={closeDrawer}
+                      style={{ width: "100%", backgroundColor: "#FFFFFF" }}
+                    >
+                      Cancel
+                    </Button>
+                  </Col>
+                  <Col span={12}>
+                    <Button
+                      type="primary"
+                      htmlType="submit"
+                      loading={loading}
+                      style={{
+                        width: "100%",
+                        backgroundColor: colors.secondary,
+                      }}
+                    >
+                      Submit
+                    </Button>
+                  </Col>
+                </Row>
+              </Form.Item>
+            )}
+          </Form>
+        ) : (
+          <div style={{ textAlign: "center", padding: "50px" }}>
+            <p>User data not found.</p>
+          </div>
         )}
       </Drawer>
     </div>
