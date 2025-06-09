@@ -5,7 +5,6 @@ import {
   Input,
   Select,
   Table,
-  Tag,
   Space,
   message,
   Row,
@@ -18,7 +17,6 @@ const { Option } = Select;
 
 import React, { useEffect, useState } from "react";
 import toast from "react-hot-toast";
-import { useNavigate, useParams } from "react-router-dom";
 import {
   EyeOutlined,
   EditOutlined,
@@ -45,8 +43,6 @@ import moment from "moment";
 const User = () => {
   usePageTitle("User");
   const dispatch = useDispatch();
-  const navigate = useNavigate();
-  const { action, id } = useParams();
 
   const users = useSelector((state) => state.users.users);
   const selectedUserFromStore = useSelector(
@@ -63,6 +59,7 @@ const User = () => {
   const [viewMode, setViewMode] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [fileList, setFileList] = useState([]);
+  const [currentUserId, setCurrentUserId] = useState(null);
 
   const [form] = Form.useForm();
 
@@ -72,40 +69,48 @@ const User = () => {
   }, [dispatch]);
 
   useEffect(() => {
-    if (action === "add") {
-      showDrawer();
-    } else if ((action === "edit" || action === "view") && id) {
+    if (drawerVisible && currentUserId && (isEditing || viewMode)) {
+      dispatch(fetchUserById(currentUserId));
+    } else if (!drawerVisible) {
       dispatch(clearSelectedUser());
-      dispatch(fetchUserById(id));
-      setDrawerVisible(true);
-      setViewMode(action === "view");
-      setIsEditing(action === "edit");
-    } else {
-      if (drawerVisible) {
-        closeDrawer();
-      }
+      form.resetFields();
+      setFileList([]);
     }
-  }, [action, id, dispatch]);
+  }, [drawerVisible, currentUserId, isEditing, viewMode, dispatch, form]);
 
- // Inside User.js
-useEffect(() => {
-  if (selectedUserFromStore) {
-    form.setFieldsValue({
-      ...selectedUserFromStore,
-      status:
-        selectedUserFromStore.status === 1 ||
-        selectedUserFromStore.status === true
-          ? "active"
-          : "inactive",
-      role_id: Number(selectedUserFromStore.roleId?.id),
-      // This is the line we modified before
-      date_of_birth: selectedUserFromStore.dateOfBirth
-        ? moment(selectedUserFromStore.dateOfBirth).format("YYYY-MM-DD")
-        : undefined,
-    });
-    // ... rest of your useEffect
-  }
-}, [selectedUserFromStore, form, action, userLoading]); // userLoading dependency can be removed if not directly causing re-renders related to this.
+  useEffect(() => {
+    if (selectedUserFromStore) {
+      form.setFieldsValue({
+        ...selectedUserFromStore,
+        status:
+          selectedUserFromStore.status === 1 ||
+          selectedUserFromStore.status === true
+            ? "active"
+            : "inactive",
+        role_id: Number(selectedUserFromStore.roleId?.id),
+        date_of_birth: selectedUserFromStore.dateOfBirth
+          ? moment(selectedUserFromStore.dateOfBirth).format("YYYY-MM-DD")
+          : undefined,
+      });
+
+      if (selectedUserFromStore.profile_img) {
+        setFileList([
+          {
+            uid: "-1",
+            name: selectedUserFromStore.profile_img.split("/").pop(),
+            status: "done",
+            url: selectedUserFromStore.profile_img,
+          },
+        ]);
+      } else {
+        setFileList([]);
+      }
+    } else if (!isEditing && !viewMode) {
+      form.resetFields();
+      form.setFieldsValue({ status: "active" });
+      setFileList([]);
+    }
+  }, [selectedUserFromStore, form, isEditing, viewMode]);
 
   useEffect(() => {
     if (error) {
@@ -113,24 +118,27 @@ useEffect(() => {
     }
   }, [error]);
 
-  const showDrawer = () => {
+  const showDrawer = (mode = "add", userId = null) => {
     form.resetFields();
-    setIsEditing(false);
-    setViewMode(false);
     setFileList([]);
+    setCurrentUserId(userId);
+    setIsEditing(mode === "edit");
+    setViewMode(mode === "view");
     setDrawerVisible(true);
     dispatch(clearSelectedUser());
-    navigate("/access/users/add");
+    if (mode === "add") {
+      form.setFieldsValue({ status: "active" });
+    }
   };
 
   const closeDrawer = () => {
     setDrawerVisible(false);
     setIsEditing(false);
     setViewMode(false);
+    setCurrentUserId(null);
     setFileList([]);
     form.resetFields();
     dispatch(clearSelectedUser());
-    navigate("/access/users");
   };
 
   const onFinish = async (values) => {
@@ -155,6 +163,12 @@ useEffect(() => {
 
       if (fileList.length > 0 && fileList[0].originFileObj) {
         formData.append("profile_img", fileList[0].originFileObj);
+      } else if (
+        isEditing &&
+        !fileList.length &&
+        selectedUserFromStore?.profile_img
+      ) {
+        formData.append("clear_profile_img", "true");
       }
 
       if (isEditing && selectedUserFromStore) {
@@ -216,11 +230,15 @@ useEffect(() => {
 
   const handleStatusChange = async (checked, record) => {
     const newStatus = checked ? 1 : 0;
-    const resultAction = await dispatch(updateStatus({ id: record.id, status: newStatus }));
+    const resultAction = await dispatch(
+      updateStatus({ id: record.id, status: newStatus })
+    );
 
-    if (updateStatus.fulfilled.match(resultAction)){
-      toast.success(`User status updated to ${newStatus === 1 ? 'Active' : 'Inactive'}.`);
-    }else {
+    if (updateStatus.fulfilled.match(resultAction)) {
+      toast.success(
+        `User status updated to ${newStatus === 1 ? "Active" : "Inactive"}.`
+      );
+    } else {
       toast.error(resultAction.payload || "Failed to update user status.");
     }
   };
@@ -252,14 +270,9 @@ useEffect(() => {
       key: "roleId",
       width: 100,
       render: (roleIdObject) => {
-        const roles = {
-          1: "Admin",
-          2: "User",
-          3: "Manager",
-        };
         return roleIdObject?.name || "Unknown";
       },
-      sorter: (a, b) => (a.roleId?.name || '').localeCompare(b.roleId?.name || ''),
+      sorter: (a, b) => (a.roleId?.name || "").localeCompare(b.roleId?.name || ""),
     },
     {
       title: "Status",
@@ -292,7 +305,7 @@ useEffect(() => {
         <Space>
           <Button
             icon={<EyeOutlined />}
-            onClick={() => navigate(`/access/users/view/${record.id}`)}
+            onClick={() => showDrawer("view", record.id)}
             style={{
               backgroundColor: colors.buttonPrimaryBg,
               color: colors.buttonText,
@@ -300,7 +313,7 @@ useEffect(() => {
           />
           <Button
             icon={<EditOutlined />}
-            onClick={() => navigate(`/access/users/edit/${record.id}`)}
+            onClick={() => showDrawer("edit", record.id)}
             style={{
               backgroundColor: colors.buttonEditBg,
               color: colors.buttonText,
@@ -373,7 +386,7 @@ useEffect(() => {
               border: "none",
               padding: "0 16px",
             }}
-            onClick={showDrawer}
+            onClick={() => showDrawer("add")}
           >
             Add User
           </Button>
@@ -442,7 +455,7 @@ useEffect(() => {
           </div>
         ) : viewMode && selectedUserFromStore ? (
           <UserViewDetails user={selectedUserFromStore} />
-        ) : action === "add" || selectedUserFromStore ? (
+        ) : !viewMode || selectedUserFromStore ? (
           <Form
             form={form}
             layout="vertical"
@@ -535,23 +548,23 @@ useEffect(() => {
                 </Form.Item>
               </Col>
 
-              {action === "add" && (
+              {!isEditing && (
                 <>
                   <Col span={12}>
                     <Form.Item name="country_id" label="Country">
-                      <Input placeholder="Enter country" />
+                      <Input placeholder="Enter country" disabled={viewMode} />
                     </Form.Item>
                   </Col>
 
                   <Col span={12}>
                     <Form.Item name="state_id" label="State">
-                      <Input placeholder="Enter state" />
+                      <Input placeholder="Enter state" disabled={viewMode} />
                     </Form.Item>
                   </Col>
 
                   <Col span={12}>
                     <Form.Item name="city_id" label="City">
-                      <Input placeholder="Enter city" />
+                      <Input placeholder="Enter city" disabled={viewMode} />
                     </Form.Item>
                   </Col>
                 </>
@@ -568,12 +581,14 @@ useEffect(() => {
                     showSearch
                     placeholder="Select a role"
                     optionFilterProp="children"
-                    filterOption={(input, option)=>
-                    (option?.children || '').toLowerCase().includes(input.toLowerCase())
+                    filterOption={(input, option) =>
+                      (option?.children || "")
+                        .toLowerCase()
+                        .includes(input.toLowerCase())
                     }
                     loading={rolesLoading}
                   >
-                    {roles.map((role)=>(
+                    {roles.map((role) => (
                       <Option key={role.id} value={role.id}>
                         {role.name}
                       </Option>

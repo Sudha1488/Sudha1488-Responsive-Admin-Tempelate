@@ -33,18 +33,14 @@ const AppRoutes = () => {
 
           {/* Users Module */}
           <Route path="/access/users" element={<User />} />
-          <Route path="/access/users/:action" element={<User />} />
-          <Route path="/access/users/:action/:id" element={<User />} />
 
-          {/* Access Module */}
+          {/* Roles Module */}
           <Route path="/access/roles" element={<Roles />} />
-          <Route path="/access/roles/:action" element={<Roles />} />
-          <Route path="/access/roles/:action/:id" element={<Roles />} />
 
           {/* Permissions Module */}
           <Route path="/access/permissions" element={<Permissions />} />
-          <Route path="/access/permissions/:action" element={<Permissions />} />
-          <Route path="/access/permissions/:action/:id" element={<Permissions />} />
+
+
           <Route path="/manage-blogs/category" element={<Category />} />
           <Route path="/manage-blogs/list" element={<Blogs />} />
 

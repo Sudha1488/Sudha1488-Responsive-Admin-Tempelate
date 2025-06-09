@@ -5,22 +5,23 @@ import {
   Input,
   Select,
   Table,
-  Tag,
   Space,
   Row,
   Col,
   Popconfirm,
+  Switch,
+  Typography,
 } from "antd";
-const { Option } = Select;
-
-import React, { useState } from "react";
-import toast from "react-hot-toast";
 import {
   EyeOutlined,
   EditOutlined,
   DeleteOutlined,
   PlusOutlined,
 } from "@ant-design/icons";
+import React, { useEffect, useState } from "react";
+import toast from "react-hot-toast";
+import { useDispatch, useSelector } from "react-redux";
+
 import colors from "../../../theme/color";
 import usePageTitle from "../../../hooks/usePageTitle";
 import {
@@ -32,135 +33,150 @@ import {
   clearSelectedCountry,
   updateCountryStatus,
 } from "../../../store/slice/country/countrySlice";
-import { useNavigate, useParams } from "react-router-dom";
-import { useSelector } from "react-redux";
+
+import CountryViewDetails from "./CountryViewDetails";
 
 const Country = () => {
   usePageTitle("Country");
 
   const dispatch = useDispatch();
-  const navigate = useNavigate();
-  const { action, id } = useParams();
 
-  const countries = useSelector((state)=> state.countries.countries);
-  const selectedCountryFromStore = useSelector((state)=>state.countries.selectedCountry);
+  const countries = useSelector((state) => state.countries.countries);
+  const selectedCountryFromStore = useSelector(
+    (state) => state.countries.selectedCountry
+  );
   const loading = useSelector((state) => state.countries.loading);
-    const countryLoading = useSelector(
-      (state) => state.countries.countryLoading
-    );
-    const error = useSelector((state) => state.countries.error);
+  const countryLoading = useSelector(
+    (state) => state.countries.countryLoading
+  );
+  const error = useSelector((state) => state.countries.error);
 
   const [drawerVisible, setDrawerVisible] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  const [selectedCountry, setSelectedCountry] = useState(null);
   const [viewMode, setViewMode] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
 
   const [form] = Form.useForm();
 
-    useEffect(() => {
-      dispatch(fetchCountries());
-    }, [dispatch]);
-  
-    useEffect(() => {
-      if (action === "add") {
-        showDrawer();
-      } else if ((action === "edit" || action === "view") && id) {
-        dispatch(fetchCountryById(id));
-        setDrawerVisible(true);
-        setViewMode(action === "view");
-        setIsEditing(action === "edit");
-      } else {
-        if (drawerVisible) {
-          closeDrawer();
-        }
-      }
-    }, [action, id, dispatch]);
-  
-    useEffect(() => {
-      if (selectedCountryFromStore) {
-        form.setFieldsValue({
-          ...selectedCountryFromStore,
-          status:
-            selectedCountryFromStore.status === 1 ||
-            selectedCountryFromStore.status === true
-              ? "active"
-              : "inactive",
-          role_id: Number(selectedCountryFromStore.role_id),
-        });
-      } else if ((action === "edit" || action === "view") && !permissionLoading) {
-      }
-    }, [selectedPermissionFromStore, form, action, permissionLoading]);
-  
-    useEffect(() => {
-      if (error) {
-        toast.error(error);
-      }
-    }, [error]);
+  useEffect(() => {
+    dispatch(fetchCountries());
+  }, [dispatch]);
+
+  useEffect(() => {
+    if (selectedCountryFromStore) {
+      form.setFieldsValue({
+        ...selectedCountryFromStore,
+        status:
+          selectedCountryFromStore.status === 1 ||
+          selectedCountryFromStore.status === true
+            ? "active"
+            : "inactive",
+        code: String(selectedCountryFromStore.code),
+      });
+    } else {
+      form.resetFields();
+      form.setFieldsValue({
+        status: "active",
+      });
+    }
+  }, [selectedCountryFromStore, form]);
+
+  useEffect(() => {
+    if (error) {
+      toast.error(error);
+    }
+  }, [error]);
 
   const showDrawer = () => {
     form.resetFields();
     setIsEditing(false);
-    setSelectedCountry(null);
     setViewMode(false);
     setDrawerVisible(true);
+    dispatch(clearSelectedCountry());
   };
 
   const closeDrawer = () => {
     setDrawerVisible(false);
     setIsEditing(false);
-    setSelectedCountry(null);
     setViewMode(false);
     form.resetFields();
+    dispatch(clearSelectedCountry());
   };
 
-  const onFinish = (values) => {
+  const onFinish = async (values) => {
     try {
-      if (isEditing && selectedCountry) {
-        const updated = countries.map((country) =>
-          country.id === selectedCountry.id
-            ? { ...country, ...values }
-            : country
+      const processedValues = {
+        ...values,
+        status: values.status === "active" ? 1 : 0,
+        code: values.code.toUpperCase(),
+      };
+
+      let resultAction;
+      if (isEditing && selectedCountryFromStore) {
+        resultAction = await dispatch(
+          updateCountry({
+            id: selectedCountryFromStore.id,
+            countryFormData: processedValues,
+          })
         );
-        setCountries(updated);
-        toast.success("Country updated successfully");
+        if (updateCountry.fulfilled.match(resultAction)) {
+          toast.success("Country updated successfully");
+          closeDrawer();
+          dispatch(fetchCountries());
+        } else {
+          toast.error(resultAction.payload?.message || "Failed to update country");
+        }
       } else {
-        const newCountry = {
-          ...values,
-          id: Math.max(...countries.map((c) => c.id)) + 1,
-        };
-        const updated = [...countries, newCountry];
-        setCountries(updated);
-        toast.success("Country added successfully");
+        resultAction = await dispatch(addCountry(processedValues));
+        if (addCountry.fulfilled.match(resultAction)) {
+          toast.success("Country added successfully");
+          closeDrawer();
+          dispatch(fetchCountries());
+        } else {
+          toast.error(resultAction.payload?.message || "Failed to add country");
+        }
       }
-      closeDrawer();
-    } catch (error) {
-      toast.error("Failed to save country");
+    } catch (submitError) {
+      toast.error("An unexpected error occurred during form submission.");
+      console.error("Form submission error:", submitError);
     }
   };
 
-  const openEditDrawer = (country) => {
-    setSelectedCountry(country);
-    setIsEditing(true);
-    setDrawerVisible(true);
-    form.setFieldsValue(country);
-  };
-
-  const viewCountry = (country) => {
-    setSelectedCountry(country);
-    setViewMode(true);
-    setDrawerVisible(true);
-    form.setFieldsValue(country);
-  };
-
-  const deleteCountry = (id) => {
+  const handleDeleteCountry = async (id) => {
     try {
-      const updated = countries.filter((c) => c.id !== id);
-      setCountries(updated);
-      toast.success("Country deleted successfully");
+      const resultAction = await dispatch(deleteCountry(id));
+      if (deleteCountry.fulfilled.match(resultAction)) {
+        toast.success("Country deleted successfully.");
+      } else {
+        toast.error(resultAction.payload?.message || "Failed to delete country");
+      }
     } catch (error) {
-      toast.error("Failed to delete country");
+      toast.error("An unexpected error occurred during deletion.");
     }
+  };
+
+  const handleStatusChange = async (checked, record) => {
+    const newStatus = checked ? 1 : 0;
+    const resultAction = await dispatch(updateCountryStatus({ id: record.id, status: newStatus }));
+    if (updateCountryStatus.fulfilled.match(resultAction)){
+      toast.success(`Country status updated to ${newStatus === 1 ? 'Active' : 'Inactive'}.`);
+    } else {
+      toast.error(resultAction.payload || "Failed to update country status.");
+    }
+  };
+
+  const viewCountry = (record) => {
+    setViewMode(true);
+    setIsEditing(false);
+    setDrawerVisible(true);
+    dispatch(fetchCountryById(record.id));
+  };
+
+  const openEditDrawer = (record) => {
+    setIsEditing(true);
+    setViewMode(false);
+    setDrawerVisible(true);
+    dispatch(fetchCountryById(record.id));
   };
 
   const columns = [
@@ -174,21 +190,29 @@ const Country = () => {
       title: "Code",
       dataIndex: "code",
       key: "code",
+      sorter: (a, b) => a.code.localeCompare(b.code),
     },
     {
       title: "Status",
       dataIndex: "status",
       key: "status",
-      render: (status) => (
-        <Tag color={status === "active" ? "green" : "red"}>
-          {status.toUpperCase()}
-        </Tag>
-      ),
-      filters: [
-        { text: "Active", value: "active" },
-        { text: "Inactive", value: "inactive" },
-      ],
-      onFilter: (value, record) => record.status === value,
+      width: 120,
+      render: (status, record) => {
+        const isActive = status === 1 || status === true;
+        return (
+          <Switch
+            checked={isActive}
+            onChange={(checked) => handleStatusChange(checked, record)}
+            loading={loading}
+            checkedChildren="Active"
+            unCheckedChildren="Inactive"
+            style={{
+              backgroundColor: isActive ? colors.success : colors.error,
+            }}
+          />
+        );
+      },
+      sorter: (a, b) => a.status - b.status,
     },
     {
       title: "Actions",
@@ -218,7 +242,7 @@ const Country = () => {
             description="Are you sure to delete this country?"
             okText="Yes"
             cancelText="No"
-            onConfirm={() => deleteCountry(record.id)}
+            onConfirm={() => handleDeleteCountry(record.id)}
           >
             <Button
               icon={<DeleteOutlined />}
@@ -232,6 +256,12 @@ const Country = () => {
       ),
     },
   ];
+
+  const filteredCountries = countries.filter(
+  (country) =>
+    country.name?.toLowerCase().includes(searchTerm) ||
+    String(country.code)?.toLowerCase().includes(searchTerm) 
+);
 
   return (
     <div>
@@ -303,11 +333,7 @@ const Country = () => {
         </div>
         <div style={{ overflowX: "auto" }}>
           <Table
-            dataSource={countries.filter(
-              (country) =>
-                country.name.toLowerCase().includes(searchTerm) ||
-                country.code.toLowerCase().includes(searchTerm)
-            )}
+            dataSource={filteredCountries}
             columns={columns}
             loading={loading}
             rowKey="id"
@@ -333,7 +359,7 @@ const Country = () => {
               : "Add New Country"}
           </div>
         }
-        width={360}
+        width={450}
         onClose={closeDrawer}
         open={drawerVisible}
         bodyStyle={{ paddingBottom: 80 }}
@@ -343,87 +369,84 @@ const Country = () => {
           borderBottom: "1px solid #444",
         }}
       >
-        <Form
-          form={form}
-          layout="vertical"
-          onFinish={onFinish}
-          initialValues={{
-            status: "active",
-          }}
-        >
-          <Form.Item
-            name="name"
-            label="Country Name"
-            rules={[
-              { required: true, message: "Please enter the country name" },
-              { min: 2, message: "Country name must be at least 2 characters" },
-            ]}
+        {countryLoading ? (
+          <div style={{ textAlign: "center", padding: "50px" }}>
+            <p>Loading country data...</p>
+          </div>
+        ) : viewMode && selectedCountryFromStore ? (
+          <CountryViewDetails country={selectedCountryFromStore} />
+        ) : (
+          <Form
+            form={form}
+            layout="vertical"
+            onFinish={onFinish}
+            initialValues={{
+              status: "active",
+            }}
           >
-            <Input placeholder="Enter country name" disabled={viewMode} />
-          </Form.Item>
-
-          <Form.Item
-            name="code"
-            label="Country Code"
-            rules={[
-              { required: true, message: "Please enter country code" },
-              {
-                min: 2,
-                max: 2,
-                message: "Country code must be exactly 2 characters",
-              },
-              {
-                pattern: /^[A-Z]+$/,
-                message: "Country code must be uppercase letters only",
-              },
-            ]}
-          >
-            <Input
-              placeholder="Enter country code (e.g., US, UK)"
-              disabled={viewMode}
-              maxLength={2}
-              style={{ textTransform: "uppercase" }}
-            />
-          </Form.Item>
-
-          <Form.Item
-            name="status"
-            label="Status"
-            rules={[{ required: true, message: "Please select status" }]}
-          >
-            <Select disabled={viewMode}>
-              <Option value="active">Active</Option>
-              <Option value="inactive">Inactive</Option>
-            </Select>
-          </Form.Item>
-
-          {!viewMode && (
-            <Form.Item>
-              <Row gutter={12}>
-                <Col span={12}>
-                  <Button
-                    onClick={closeDrawer}
-                    style={{ width: "100%", backgroundColor: "#FFFFFF" }}
-                  >
-                    Cancel
-                  </Button>
-                </Col>
-                <Col span={12}>
-                  <Button
-                    type="primary"
-                    htmlType="submit"
-                    style={{
-                      width: "100%",
-                      backgroundColor: colors.secondary,
-                    }}
-                  >
-                    Submit
-                  </Button>
-                </Col>
-              </Row>
+            <Form.Item
+              name="name"
+              label="Country Name"
+              rules={[
+                { required: true, message: "Please enter the country name" },
+                { min: 2, message: "Country name must be at least 2 characters" },
+              ]}
+            >
+              <Input placeholder="Enter country name" disabled={viewMode} />
             </Form.Item>
-          )}
-        </Form>
+
+            <Form.Item
+              name="code"
+              label="Country Code"
+            >
+              <Input
+                placeholder="Enter country code (e.g., US, UK)"
+                disabled={viewMode}
+                maxLength={2}
+                style={{ textTransform: "uppercase" }}
+              />
+            </Form.Item>
+
+            <Form.Item
+              name="status"
+              label="Status"
+              rules={[{ required: true, message: "Please select status" }]}
+            >
+              <Select disabled={viewMode}>
+                <Option value="active">Active</Option>
+                <Option value="inactive">Inactive</Option>
+              </Select>
+            </Form.Item>
+
+            {!viewMode && (
+              <Form.Item>
+                <Row gutter={12}>
+                  <Col span={12}>
+                    <Button
+                      onClick={closeDrawer}
+                      style={{ width: "100%", backgroundColor: "#FFFFFF" }}
+                    >
+                      Cancel
+                    </Button>
+                  </Col>
+                  <Col span={12}>
+                    <Button
+                      type="primary"
+                      htmlType="submit"
+                      loading={loading}
+                      style={{
+                        width: "100%",
+                        backgroundColor: colors.secondary,
+                      }}
+                    >
+                      Submit
+                    </Button>
+                  </Col>
+                </Row>
+              </Form.Item>
+            )}
+          </Form>
+        )}
       </Drawer>
     </div>
   );

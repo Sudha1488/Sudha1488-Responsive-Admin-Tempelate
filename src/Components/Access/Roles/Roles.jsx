@@ -33,15 +33,12 @@ import {
   clearSelectedRole,
   updateStatus,
 } from "../../../store/slice/roles/rolesSlice";
-import { useNavigate, useParams } from "react-router-dom";
 import RoleViewDetails from "./RoleViewDetails";
 
 const Roles = () => {
   usePageTitle("Roles");
 
   const dispatch = useDispatch();
-  const navigate = useNavigate();
-  const { action, id } = useParams();
 
   const roles = useSelector((state) => state.roles.roles);
   const selectedRoleFromStore = useSelector(
@@ -56,6 +53,7 @@ const Roles = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [viewMode, setViewMode] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [currentRoleId, setCurrentRoleId] = useState(null);
 
   const [checkedList, setCheckedList] = useState([]);
   const [indeterminate, setIndeterminate] = useState(false);
@@ -69,19 +67,16 @@ const Roles = () => {
   }, [dispatch]);
 
   useEffect(() => {
-    if (action === "add") {
-      showDrawer();
-    } else if ((action === "edit" || action === "view") && id) {
-      dispatch(fetchRoleById(id));
-      setDrawerVisible(true);
-      setViewMode(action === "view");
-      setIsEditing(action === "edit");
-    } else {
-      if (drawerVisible) {
-        closeDrawer();
-      }
+    if (drawerVisible && currentRoleId && (isEditing || viewMode)) {
+      dispatch(fetchRoleById(currentRoleId));
+    } else if (!drawerVisible) {
+      dispatch(clearSelectedRole());
+      form.resetFields();
+      setCheckedList([]);
+      setIndeterminate(false);
+      setCheckAll(false);
     }
-  }, [action, id, dispatch]);
+  }, [drawerVisible, currentRoleId, isEditing, viewMode, dispatch, form]);
 
   useEffect(() => {
     if (selectedRoleFromStore) {
@@ -95,15 +90,20 @@ const Roles = () => {
         role_id: Number(selectedRoleFromStore.role_id),
         permissions: selectedRoleFromStore.permissions || [],
       });
-      setCheckedList(selectedRoleFromStore.permissions || []);
-      updateCheckboxStates(selectedRoleFromStore.permissions || []);
-    } else if (action === "add") {
+      const initialCheckedNames = permissionsList
+        .filter((p) =>
+          (selectedRoleFromStore.permissions || []).includes(p.id)
+        )
+        .map((p) => p.name);
+      setCheckedList(initialCheckedNames);
+      updateCheckboxStates(initialCheckedNames);
+    } else if (!isEditing && !viewMode) {
       setCheckedList([]);
       setIndeterminate(false);
       setCheckAll(false);
       form.setFieldsValue({ permissions: [] });
     }
-  }, [selectedRoleFromStore, form, action, roleLoading]);
+  }, [selectedRoleFromStore, form, isEditing, viewMode, permissionsList]);
 
   useEffect(() => {
     if (permissionsList.length > 0) {
@@ -117,25 +117,28 @@ const Roles = () => {
     }
   }, [error]);
 
-  const showDrawer = () => {
+  const showDrawer = (mode = "add", roleId = null) => {
     form.resetFields();
-    setIsEditing(false);
-    setViewMode(false);
+    setCurrentRoleId(roleId);
+    setIsEditing(mode === "edit");
+    setViewMode(mode === "view");
     setDrawerVisible(true);
     dispatch(clearSelectedRole());
-    navigate("/access/roles/add");
-    setCheckedList([]);
-    setIndeterminate(false);
-    setCheckAll(false);
+    if (mode === "add") {
+      setCheckedList([]);
+      setIndeterminate(false);
+      setCheckAll(false);
+      form.setFieldsValue({ permissions: [], status: "active" });
+    }
   };
 
   const closeDrawer = () => {
     setDrawerVisible(false);
     setIsEditing(false);
     setViewMode(false);
+    setCurrentRoleId(null);
     form.resetFields();
     dispatch(clearSelectedRole());
-    navigate("/access/roles");
     setCheckedList([]);
     setIndeterminate(false);
     setCheckAll(false);
@@ -184,6 +187,7 @@ const Roles = () => {
       const resultAction = await dispatch(deleteRole(id));
       if (deleteRole.fulfilled.match(resultAction)) {
         toast.success("Role deleted successfully.");
+        dispatch(fetchRoles());
       } else {
         toast.error(resultAction.payload?.message || "Failed to delete role");
       }
@@ -194,23 +198,29 @@ const Roles = () => {
 
   const handleStatusChange = async (checked, record) => {
     const newStatus = checked ? 1 : 0;
-    const resultAction = await dispatch(updateStatus({ id: record.id, status: newStatus }));
-    if (updateStatus.fulfilled.match(resultAction)){
-          toast.success(`Role status updated to ${newStatus === 1 ? 'Active' : 'Inactive'}.`);
-        }else {
-          toast.error(resultAction.payload || "Failed to update role status.");
-        }
+    const resultAction = await dispatch(
+      updateStatus({ id: record.id, status: newStatus })
+    );
+    if (updateStatus.fulfilled.match(resultAction)) {
+      toast.success(
+        `Role status updated to ${newStatus === 1 ? "Active" : "Inactive"}.`
+      );
+    } else {
+      toast.error(resultAction.payload || "Failed to update role status.");
+    }
   };
 
   const allPermissionNames = Array.isArray(permissionsList)
     ? permissionsList.map((p) => p.name)
     : [];
-    const allPermissionIds = Array.isArray(permissionsList) ? permissionsList.map((p) => p.id) : [];
+  const allPermissionIds = Array.isArray(permissionsList)
+    ? permissionsList.map((p) => p.id)
+    : [];
 
   const onCheckboxGroupChange = (list) => {
     const selectedPermissionIds = permissionsList
-      .filter(p => list.includes(p.name))
-      .map(p => p.id);
+      .filter((p) => list.includes(p.name))
+      .map((p) => p.id);
     setCheckedList(list);
     setIndeterminate(!!list.length && list.length < allPermissionNames.length);
     setCheckAll(list.length === allPermissionNames.length);
@@ -220,7 +230,7 @@ const Roles = () => {
   const onCheckAllChange = (e) => {
     const checked = e.target.checked;
     const newCheckedListNames = checked ? allPermissionNames : [];
-    const newCheckedListIds = checked ? allPermissionIds : []; 
+    const newCheckedListIds = checked ? allPermissionIds : [];
     setCheckedList(newCheckedListNames);
     setIndeterminate(false);
     setCheckAll(checked);
@@ -281,7 +291,7 @@ const Roles = () => {
         <Space>
           <Button
             icon={<EyeOutlined />}
-            onClick={() => navigate(`/access/roles/view/${record.id}`)}
+            onClick={() => showDrawer("view", record.id)}
             style={{
               backgroundColor: colors.buttonPrimaryBg,
               color: colors.buttonText,
@@ -289,7 +299,7 @@ const Roles = () => {
           />
           <Button
             icon={<EditOutlined />}
-            onClick={() => navigate(`/access/roles/edit/${record.id}`)}
+            onClick={() => showDrawer("edit", record.id)}
             style={{
               backgroundColor: colors.buttonEditBg,
               color: colors.buttonText,
@@ -361,7 +371,7 @@ const Roles = () => {
               border: "none",
               padding: "0 16px",
             }}
-            onClick={showDrawer}
+            onClick={() => showDrawer("add")}
           >
             Add Role
           </Button>
@@ -402,7 +412,6 @@ const Roles = () => {
       </div>
 
       <Drawer
-      
         title={
           <div
             style={{
@@ -411,7 +420,11 @@ const Roles = () => {
               color: "#fff",
             }}
           >
-            {viewMode ? "View Role" : isEditing ? "Edit Role" : "Add New Role"}
+            {viewMode
+              ? "View Role"
+              : isEditing
+              ? "Edit Role"
+              : "Add New Role"}
           </div>
         }
         width={800}
@@ -429,15 +442,15 @@ const Roles = () => {
             <p>Loading role data...</p>
           </div>
         ) : viewMode && selectedRoleFromStore ? (
-          <RoleViewDetails role={selectedRoleFromStore} />
-        ) : action === "add" || selectedRoleFromStore ? (
+          <RoleViewDetails role={selectedRoleFromStore} permissionsList={permissionsList} />
+        ) : selectedRoleFromStore || !isEditing ? (
           <Form
             form={form}
             layout="vertical"
             onFinish={onFinish}
             initialValues={{
               status: "active",
-              permission: [],
+              permissions: [],
             }}
           >
             <Form.Item

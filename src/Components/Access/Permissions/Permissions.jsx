@@ -11,7 +11,7 @@ import {
   Row,
   Col,
   Popconfirm,
-  Checkbox
+  Checkbox,
 } from "antd";
 const { Option } = Select;
 
@@ -35,14 +35,11 @@ import {
   clearSelectedPermission,
   updateStatus,
 } from "../../../store/slice/permissions/permissionsSlice";
-import { useNavigate, useParams } from "react-router-dom";
 
 const Permissions = () => {
   usePageTitle("Permissions");
 
   const dispatch = useDispatch();
-  const navigate = useNavigate();
-  const { action, id } = useParams();
 
   const permissions = useSelector((state) => state.permissions.permissions);
   const selectedPermissionFromStore = useSelector(
@@ -58,6 +55,7 @@ const Permissions = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [viewMode, setViewMode] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [currentPermissionId, setCurrentPermissionId] = useState(null);
 
   const [form] = Form.useForm();
 
@@ -66,19 +64,13 @@ const Permissions = () => {
   }, [dispatch]);
 
   useEffect(() => {
-    if (action === "add") {
-      showDrawer();
-    } else if ((action === "edit" || action === "view") && id) {
-      dispatch(fetchPermissionsById(id));
-      setDrawerVisible(true);
-      setViewMode(action === "view");
-      setIsEditing(action === "edit");
-    } else {
-      if (drawerVisible) {
-        closeDrawer();
-      }
+    if (drawerVisible && currentPermissionId && (isEditing || viewMode)) {
+      dispatch(fetchPermissionsById(currentPermissionId));
+    } else if (!drawerVisible) {
+      dispatch(clearSelectedPermission());
+      form.resetFields();
     }
-  }, [action, id, dispatch]);
+  }, [drawerVisible, currentPermissionId, isEditing, viewMode, dispatch, form]);
 
   useEffect(() => {
     if (selectedPermissionFromStore) {
@@ -89,11 +81,12 @@ const Permissions = () => {
           selectedPermissionFromStore.status === true
             ? "active"
             : "inactive",
-        role_id: Number(selectedPermissionFromStore.role_id),
       });
-    } else if ((action === "edit" || action === "view") && !permissionLoading) {
+    } else if (!isEditing && !viewMode) {
+      form.resetFields();
+      form.setFieldsValue({ status: "active" });
     }
-  }, [selectedPermissionFromStore, form, action, permissionLoading]);
+  }, [selectedPermissionFromStore, form, isEditing, viewMode]);
 
   useEffect(() => {
     if (error) {
@@ -101,22 +94,25 @@ const Permissions = () => {
     }
   }, [error]);
 
-  const showDrawer = () => {
+  const showDrawer = (mode = "add", permissionId = null) => {
     form.resetFields();
-    setIsEditing(false);
-    setViewMode(false);
+    setCurrentPermissionId(permissionId);
+    setIsEditing(mode === "edit");
+    setViewMode(mode === "view");
     setDrawerVisible(true);
     dispatch(clearSelectedPermission());
-    navigate("/access/permissions/add");
+    if (mode === "add") {
+      form.setFieldsValue({ status: "active" });
+    }
   };
 
   const closeDrawer = () => {
     setDrawerVisible(false);
     setIsEditing(false);
     setViewMode(false);
+    setCurrentPermissionId(null);
     form.resetFields();
     dispatch(clearSelectedPermission());
-    navigate("/access/permissions");
   };
 
   const onFinish = async (values) => {
@@ -131,7 +127,7 @@ const Permissions = () => {
         resultAction = await dispatch(
           updatePermission({
             id: selectedPermissionFromStore.id,
-           userFormData: processedValues,
+            permissionData: processedValues,
           })
         );
         if (updatePermission.fulfilled.match(resultAction)) {
@@ -158,28 +154,31 @@ const Permissions = () => {
     }
   };
 
-  const handleDeletePermission = async (id)=>{
-    try{
+  const handleDeletePermission = async (id) => {
+    try {
       const resultAction = await dispatch(deletePermission(id));
-      if(deletePermission.fulfilled.match(resultAction)){
-        toast.success("Permission deleted successfully.")
-      }else {
+      if (deletePermission.fulfilled.match(resultAction)) {
+        toast.success("Permission deleted successfully.");
+      } else {
         toast.error(resultAction.payload?.message || "Failed to delete permission");
       }
-    }catch(error){
-      toast.error("An unexpected error occurred during deletion.")
+    } catch (error) {
+      toast.error("An unexpected error occurred during deletion.");
     }
-  }
-  
+  };
 
   const handleStatusChange = async (checked, record) => {
     const newStatus = checked ? 1 : 0;
-    await dispatch(updateStatus({ id: record.id, status: newStatus }));
-    if (updateStatus.fulfilled.match(resultAction)){
-          toast.success(`Permission status updated to ${newStatus === 1 ? 'Active' : 'Inactive'}.`);
-        }else {
-          toast.error(resultAction.payload || "Failed to update permission status.");
-        }
+    const resultAction = await dispatch(
+      updateStatus({ id: record.id, status: newStatus })
+    );
+    if (updateStatus.fulfilled.match(resultAction)) {
+      toast.success(
+        `Permission status updated to ${newStatus === 1 ? "Active" : "Inactive"}.`
+      );
+    } else {
+      toast.error(resultAction.payload || "Failed to update permission status.");
+    }
   };
 
   const columns = [
@@ -223,7 +222,7 @@ const Permissions = () => {
         <Space>
           <Button
             icon={<EyeOutlined />}
-            onClick={() => navigate(`/access/permissions/view/${record.id}`)}
+            onClick={() => showDrawer("view", record.id)}
             style={{
               backgroundColor: colors.buttonPrimaryBg,
               color: colors.buttonText,
@@ -231,7 +230,7 @@ const Permissions = () => {
           />
           <Button
             icon={<EditOutlined />}
-            onClick={() => navigate(`/access/permissions/edit/${record.id}`)}
+            onClick={() => showDrawer("edit", record.id)}
             style={{
               backgroundColor: colors.buttonEditBg,
               color: colors.buttonText,
@@ -303,7 +302,7 @@ const Permissions = () => {
               border: "none",
               padding: "0 16px",
             }}
-            onClick={showDrawer}
+            onClick={() => showDrawer("add")}
           >
             Add Permission
           </Button>
@@ -352,11 +351,15 @@ const Permissions = () => {
               color: "#fff",
             }}
           >
-            {viewMode
-              ? "View Permission"
-              : isEditing
-              ? "Edit Permission"
-              : "Add New Permission"}
+            {permissionLoading ? (
+              <p>Loading...</p>
+            ) : viewMode ? (
+              "View Permission"
+            ) : isEditing ? (
+              "Edit Permission"
+            ) : (
+              "Add New Permission"
+            )}
           </div>
         }
         width={360}
@@ -369,74 +372,85 @@ const Permissions = () => {
           borderBottom: "1px solid #444",
         }}
       >
-        <Form
-          form={form}
-          layout="vertical"
-          onFinish={onFinish}
-          initialValues={{
-            status: "active",
-          }}
-        >
-          <Form.Item
-            name="name"
-            label="Permission Name"
-            rules={[
-              { required: true, message: "Please enter the permission name" },
-            ]}
+        {permissionLoading ? (
+          <div style={{ textAlign: "center", padding: "50px" }}>
+            <p>Loading permission data...</p>
+          </div>
+        ) : viewMode && !selectedPermissionFromStore ? (
+          <div style={{ textAlign: "center", padding: "50px" }}>
+            <p>Permission data not found.</p>
+          </div>
+        ) : (
+          <Form
+            form={form}
+            layout="vertical"
+            onFinish={onFinish}
+            initialValues={{
+              status: "active",
+            }}
           >
-            <Input placeholder="Enter permission name" disabled={viewMode} />
-          </Form.Item>
-
-          <Form.Item
-            name="description"
-            label="Description"
-            rules={[{ required: true, message: "Please enter description" }]}
-          >
-            <Input.TextArea
-              rows={3}
-              placeholder="Enter description"
-              disabled={viewMode}
-            />
-          </Form.Item>
-
-          <Form.Item
-            name="status"
-            label="Status"
-            rules={[{ required: true, message: "Please select status" }]}
-          >
-            <Select disabled={viewMode}>
-              <Option value="active">Active</Option>
-              <Option value="inactive">Inactive</Option>
-            </Select>
-          </Form.Item>
-
-          {!viewMode && (
-            <Form.Item>
-              <Row gutter={12}>
-                <Col span={12}>
-                  <Button
-                    onClick={closeDrawer}
-                    style={{ width: "100%", backgroundColor: "#FFFFFF" }}
-                  >
-                    Cancel
-                  </Button>
-                </Col>
-                <Col span={12}>
-                  <Button
-                    type="primary"
-                    htmlType="submit"
-                    style={{
-                      width: "100%",
-                      backgroundColor: colors.secondary,
-                    }}
-                  >
-                    Submit
-                  </Button>
-                </Col>
-              </Row>
+            <Form.Item
+              name="name"
+              label="Permission Name"
+              rules={[
+                { required: true, message: "Please enter the permission name" },
+              ]}
+            >
+              <Input placeholder="Enter permission name" disabled={viewMode} />
             </Form.Item>
-          )}
-        </Form>
+
+            <Form.Item
+              name="description"
+              label="Description"
+              rules={[{ required: true, message: "Please enter description" }]}
+            >
+              <Input.TextArea
+                rows={3}
+                placeholder="Enter description"
+                disabled={viewMode}
+              />
+            </Form.Item>
+
+            <Form.Item
+              name="status"
+              label="Status"
+              rules={[{ required: true, message: "Please select status" }]}
+            >
+              <Select disabled={viewMode}>
+                <Option value="active">Active</Option>
+                <Option value="inactive">Inactive</Option>
+              </Select>
+            </Form.Item>
+
+            {!viewMode && (
+              <Form.Item>
+                <Row gutter={12}>
+                  <Col span={12}>
+                    <Button
+                      onClick={closeDrawer}
+                      style={{ width: "100%", backgroundColor: "#FFFFFF" }}
+                    >
+                      Cancel
+                    </Button>
+                  </Col>
+                  <Col span={12}>
+                    <Button
+                      type="primary"
+                      htmlType="submit"
+                      loading={loading}
+                      style={{
+                        width: "100%",
+                        backgroundColor: colors.secondary,
+                      }}
+                    >
+                      Submit
+                    </Button>
+                  </Col>
+                </Row>
+              </Form.Item>
+            )}
+          </Form>
+        )}
       </Drawer>
     </div>
   );

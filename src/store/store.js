@@ -5,6 +5,8 @@ import rolesReducer from "./slice/roles/rolesSlice";
 import permissionsReducer from "./slice/permissions/permissionsSlice"
 import helperSlice from './slice/helper/helperSlice';
 import countriesSlice from './slice/country/countrySlice'
+import statesSlice from './slice/state/stateSlice';
+import citiesSlice from './slice/city/citySlice'
 
 
 export const store = configureStore({
@@ -15,5 +17,7 @@ export const store = configureStore({
     permissions:permissionsReducer,
     helper:helperSlice,
     countries:countriesSlice,
+    states:statesSlice,
+    cities:citiesSlice
   },
 });

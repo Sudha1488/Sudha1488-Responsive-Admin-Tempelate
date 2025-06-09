@@ -24,8 +24,58 @@ export const fetchRoles = createAsyncThunk(
   }
 );
 
+export const fetchCountries = createAsyncThunk(
+  "helper/fetchCountries",
+  async (_, { rejectWithValue, getState }) => {
+    try {
+      const token = getState().auth.token;
+      const res = await API.get("/admin/helper/get-countries", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (res.data?.data && Array.isArray(res.data.data)) {
+        return res.data.data.map(role => ({id: role.id, name:role.name}));
+      }
+      return [];
+    } catch (err) {
+      return rejectWithValue(
+        err.response?.data?.message || err.message || "Failed to fetch countries"
+      );
+    }
+  }
+);
+
+export const fetchStates = createAsyncThunk(
+  "helper/fetchStates",
+  async (_, { rejectWithValue, getState }) => {
+    try {
+      const token = getState().auth.token;
+      const res = await API.get("/admin/helper/get-states", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (res.data?.data && Array.isArray(res.data.data)) {
+        return res.data.data.map(role => ({id: role.id, name:role.name}));
+      }
+      return [];
+    } catch (err) {
+      return rejectWithValue(
+        err.response?.data?.message || err.message || "Failed to fetch states"
+      );
+    }
+  }
+);
+
+
+
 const initialState = {
   rolesList: [],
+  countriesList:[],
+  statesList:[],
   loading: false,
   error: null,
 };
@@ -40,6 +90,7 @@ const helperSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
+    //for roles
       .addCase(fetchRoles.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -52,7 +103,36 @@ const helperSlice = createSlice({
       .addCase(fetchRoles.rejected, (state,action) => {
         state.loading = false;
         state.error = action.payload || action.error.message;
-      });
+      })
+    //for countries
+      .addCase(fetchCountries.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchCountries.fulfilled, (state,action) => {
+        state.loading = false;
+        state.countriesList = action.payload;
+        state.error = null;
+      })
+      .addCase(fetchCountries.rejected, (state,action) => {
+        state.loading = false;
+        state.error = action.payload || action.error.message;
+      })
+    //for states
+      .addCase(fetchStates.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchStates.fulfilled, (state,action) => {
+        state.loading = false;
+        state.statesList = action.payload;
+        state.error = null;
+      })
+      .addCase(fetchStates.rejected, (state,action) => {
+        state.loading = false;
+        state.error = action.payload || action.error.message;
+      })
+
   },
 });
 
