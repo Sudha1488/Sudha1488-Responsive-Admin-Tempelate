@@ -13,7 +13,6 @@ import {
   Switch,
 } from "antd";
 const { Option } = Select;
-
 import React, { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import {
@@ -33,11 +32,10 @@ import {
   deleteState,
   updateStateStatus,
   clearSelectedState,
-  clearError
+  clearError,
 } from "../../../store/slice/state/stateSlice";
 import { fetchCountries } from "../../../store/slice/helper/helperSlice";
 import StateViewDetails from "./StateViewDetails";
-
 
 const State = () => {
   usePageTitle("State");
@@ -55,10 +53,8 @@ const State = () => {
 
   const [drawerVisible, setDrawerVisible] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  const [selectedState, setSelectedState] = useState(null);
   const [viewMode, setViewMode] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  const [countryFilter, setCountryFilter] = useState(null);
   const [currentStateId, setCurrentStateId] = useState(null);
 
   const [form] = Form.useForm();
@@ -124,39 +120,45 @@ const State = () => {
 
   const onFinish = async (values) => {
     try {
-      
       const processedValues = {
         ...values,
         status: values.status === "active" ? 1 : 0,
         code: values.code === undefined ? null : values.code,
         country_id: values.countryId,
       };
-      console.log("Processed values to send:", processedValues);
+      // console.log("Processed values to send:", processedValues);
+
       if (isEditing && selectedStateFromStore) {
-        resultAction = await dispatch(
-          updateState({
-            id: selectedStateFromStore.id,
-            stateData: processedValues,
-          })
-        );
-        if (updateState.fulfilled.match(resultAction)) {
+        try {
+          const result = await dispatch(
+            updateState({
+              id: selectedStateFromStore.id,
+              stateData: processedValues,
+            })
+          ).unwrap(); 
           toast.success("State updated successfully");
           closeDrawer();
-        } else {
-          toast.error(resultAction.payload || "Failed to update sstate");
+          dispatch(fetchStates());
+        } catch (error) {
+          toast.error(
+            error.payload || error.message || "Failed to update state."
+          );
         }
       } else {
-        resultAction = await dispatch(addState(processedValues));
-        if (addState.fulfilled.match(resultAction)) {
+        try {
+          await dispatch(addState(processedValues)).unwrap();
           toast.success("State added successfully");
           closeDrawer();
-          dispatch(fetchStates());
-        } else {
-          toast.error(resultAction.payload || "Failed to add state");
+          dispatch(fetchStates()); 
+        } catch (error) {
+          toast.error(error.payload || error.message || "Failed to add state.");
         }
       }
     } catch (error) {
-      toast.error("An unexpected error occurred during form submission.");
+      toast.error(
+        "An unexpected error occurred during form submission."
+      );
+      console.error("Unhandled error during form submission:", error);
     }
   };
 
@@ -165,7 +167,6 @@ const State = () => {
       const resultAction = await dispatch(deleteState(id));
       if (deleteState.fulfilled.match(resultAction)) {
         toast.success("State Deleted successfully.");
-        // dispatch(fetchStates());
       } else {
         toast.error(resultAction.payload?.message || "Failed to delete state");
       }
@@ -207,6 +208,9 @@ const State = () => {
       title: "Code",
       dataIndex: "code",
       key: "code",
+      render:(text,record)=>{
+        return record.code? record.code : `${record.name}_code`
+      }
     },
     {
       title: "Country",
@@ -280,13 +284,13 @@ const State = () => {
       ),
     },
   ];
-
   const filteredStates = states.filter(
     (state) =>
       state.name?.toLowerCase().includes(searchTerm) ||
-      String(state.code || '').toLowerCase().includes(searchTerm)
+      String(state.code || "")
+        .toLowerCase()
+        .includes(searchTerm)
   );
-
   return (
     <div>
       <div
@@ -356,18 +360,16 @@ const State = () => {
 
           <Select
             placeholder="Filter by Country"
-            allowClear
+            allowClearkfq
             style={{ width: 180 }}
             onChange={(value) => setCountryFilter(value)}
-            loading={!countriesList.length} 
-            sea
+            loading={!countriesList.length}
           >
             {countriesList.map((country) => (
               <Option key={country.id} value={country.id}>
                 {country.name}
               </Option>
             ))}
-
           </Select>
         </div>
         <div style={{ overflowX: "auto" }}>
@@ -412,8 +414,8 @@ const State = () => {
           <div style={{ textAlign: "center", padding: "50px" }}>
             <p>Loading state data...</p>
           </div>
-        ) : viewMode && selectedStateFromStore ? ( 
-         <StateViewDetails state={selectedStateFromStore}/>
+        ) : viewMode && selectedStateFromStore ? (
+          <StateViewDetails state={selectedStateFromStore} />
         ) : (
           <Form
             form={form}
@@ -441,16 +443,17 @@ const State = () => {
             <Form.Item
               name="code"
               label="State Code"
-              rules={[
-                // { required: true, message: "Please enter state code" },
-                
-              ]}
+              rules={
+                [
+                  // { required: true, message: "Please enter state code" },
+                ]
+              }
             >
               <Input
                 placeholder="Enter state code"
                 disabled={viewMode}
-                maxLength={5}
-                style={{ textTransform: "uppercase" }}
+                maxLength={10}
+                // style={{ textTransform: "uppercase" }}
               />
             </Form.Item>
 

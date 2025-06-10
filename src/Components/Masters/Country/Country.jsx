@@ -190,6 +190,9 @@ const Country = () => {
       title: "Code",
       dataIndex: "code",
       key: "code",
+      render:(text,record)=>{
+        return record.code ? record.code : `${record.name}_code`
+      },
       sorter: (a, b) => a.code.localeCompare(b.code),
     },
     {
@@ -400,10 +403,10 @@ const Country = () => {
               label="Country Code"
             >
               <Input
-                placeholder="Enter country code (e.g., US, UK)"
+                placeholder="Enter country code"
                 disabled={viewMode}
-                maxLength={2}
-                style={{ textTransform: "uppercase" }}
+                maxLength={10}
+                // style={{ textTransform: "uppercase" }}
               />
             </Form.Item>
 

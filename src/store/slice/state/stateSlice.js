@@ -218,7 +218,7 @@ const stateSlice = createSlice({
       })
       .addCase(addState.fulfilled, (state, action) => {
         state.loading = false;
-        state.states.push(action.payload);
+        // state.states.push(action.payload);
         state.error = null;
       })
       .addCase(addState.rejected, (state, action) => {

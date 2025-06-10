@@ -1,29 +1,30 @@
 import { Space, Typography } from 'antd';
-import React from 'react'
+import React from 'react';
 
-const StateViewDetails = ({state}) => {
-  if (!state) {
-    return <Typography.Text>No state data available.</Typography.Text>;
+const CityViewDetails = ({ city }) => {
+  if (!city) {
+    return <Typography.Text>No city data available.</Typography.Text>;
   }
-  const displayCode = state.code ? state.code : `${state.name}_code`;
+  const displayCode = city.code ? city.code : `${city.name}_code`;
+
 
   return (
     <Space direction="vertical" style={{ width: '100%' }}>
       <Typography.Paragraph>
-        <strong>Name:</strong> {state.name}
+        <strong>Name:</strong> {city.name}
       </Typography.Paragraph>
       <Typography.Paragraph>
         <strong>Code:</strong> {displayCode}
       </Typography.Paragraph>
       <Typography.Paragraph>
-        <strong>Country:</strong> {state.countryId?.name || 'N/A'}
+        <strong>State:</strong> {city.stateId?.name || 'N/A'}
       </Typography.Paragraph>
       <Typography.Paragraph>
         <strong>Status:</strong>{" "}
-        {state.status === 1 || state.status === true ? "Active" : "Inactive"}
+        {city.status === 1 || city.status === true ? "Active" : "Inactive"}
       </Typography.Paragraph>
     </Space>
   );
-}
+};
 
-export default StateViewDetails
+export default CityViewDetails;
