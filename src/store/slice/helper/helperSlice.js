@@ -70,12 +70,58 @@ export const fetchStates = createAsyncThunk(
   }
 );
 
+export const fetchCategories = createAsyncThunk(
+  "helper/fetchCategories",
+  async (_, { rejectWithValue, getState }) => {
+    try {
+      const token = getState().auth.token;
+      const res = await API.get("/admin/helper/get-categories", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
+      if (res.data?.data && Array.isArray(res.data.data)) {
+        return res.data.data.map(category => ({id: category.id, name:category.name}));
+      }
+      return [];
+    } catch (err) {
+      return rejectWithValue(
+        err.response?.data?.message || err.message || "Failed to fetch categories"
+      );
+    }
+  }
+);
+
+export const fetchCities = createAsyncThunk(
+  "helper/fetchCities",
+  async (_, { rejectWithValue, getState }) => {
+    try {
+      const token = getState().auth.token;
+      const res = await API.get("/admin/helper/get-cities", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (res.data?.data && Array.isArray(res.data.data)) {
+        return res.data.data.map(city => ({id: city.id, name:city.name}));
+      }
+      return [];
+    } catch (err) {
+      return rejectWithValue(
+        err.response?.data?.message || err.message || "Failed to fetch cities"
+      );
+    }
+  }
+);
 
 const initialState = {
   rolesList: [],
   countriesList:[],
   statesList:[],
+  categoriesList:[],
+  citiesList:[],
   loading: false,
   error: null,
 };
@@ -129,6 +175,34 @@ const helperSlice = createSlice({
         state.error = null;
       })
       .addCase(fetchStates.rejected, (state,action) => {
+        state.loading = false;
+        state.error = action.payload || action.error.message;
+      })
+    //for categories
+      .addCase(fetchCategories.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchCategories.fulfilled, (state,action) => {
+        state.loading = false;
+        state.categoriesList = action.payload;
+        state.error = null;
+      })
+      .addCase(fetchCategories.rejected, (state,action) => {
+        state.loading = false;
+        state.error = action.payload || action.error.message;
+      })
+    //for cities
+      .addCase(fetchCities.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchCities.fulfilled, (state,action) => {
+        state.loading = false;
+        state.citiesList = action.payload;
+        state.error = null;
+      })
+      .addCase(fetchCities.rejected, (state,action) => {
         state.loading = false;
         state.error = action.payload || action.error.message;
       })

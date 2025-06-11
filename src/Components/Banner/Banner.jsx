@@ -1,4 +1,3 @@
-
 import {
   Button,
   Drawer,
@@ -13,12 +12,14 @@ import {
   Popconfirm,
   Upload,
   Image,
+  Switch,
 } from "antd";
 const { Option } = Select;
 const { TextArea } = Input;
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import toast from "react-hot-toast";
+import { useDispatch, useSelector } from "react-redux";
 import {
   EyeOutlined,
   EditOutlined,
@@ -28,142 +29,171 @@ import {
 } from "@ant-design/icons";
 import colors from "../../theme/color";
 import usePageTitle from "../../hooks/usePageTitle";
-
-const bannersData = [
-  {
-    id: 1,
-    name: "Mastering React",
-    imagePath: "https://via.placeholder.com/60?text=React",
-    status: 2,
-  },
-  {
-    id: 2,
-    name: "JavaScript Fundamentals",
-    imagePath: "https://via.placeholder.com/60?text=JS",
-    status: 1, 
-  },
-  {
-    id: 3,
-    name: "Intro to Web Development",
-    imagePath: "https://via.placeholder.com/60?text=HTML",
-    status: 0, 
-  },
-  {
-    id: 4,
-    name: "Understanding TypeScript",
-    imagePath: "https://via.placeholder.com/60?text=TS",
-    status: 2, 
-  },
-  {
-    id: 5,
-    name: "Deploying with Vercel",
-    imagePath: "https://via.placeholder.com/60?text=Vercel",
-    status: 1, 
-  },
-];
+import {
+  fetchBanners,
+  fetchBannerById,
+  addBanner,
+  updateBanner,
+  deleteBanner,
+  clearSelectedBanner,
+  updateBannerStatus,
+  clearError,
+} from "../../store/slice/banner/bannerSlice";
 
 const Banner = () => {
-  usePageTitle('Banner')
-  const [banners, setBanners] = useState(bannersData);
-  const [loading, setLoading] = useState(false);
-  
+  usePageTitle("Banner");
+
+  const dispatch = useDispatch();
+
+  const banners = useSelector((state) => state.banners.banners);
+  const selectedBannerFromStore = useSelector(
+    (state) => state.banners.selectedBanner
+  );
+  const loading = useSelector((state) => state.banners.loading);
+  const bannerLoading = useSelector((state) => state.banners.bannerLoading);
+  const error = useSelector((state) => state.banners.error);
+
   const [drawerVisible, setDrawerVisible] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  const [selectedBanner, setSelectedBanner] = useState(null);
   const [viewMode, setViewMode] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  
+  const [currentBannerId, setCurrentBannerId] = useState(null);
+
   const [form] = Form.useForm();
 
-  const showDrawer = () => {
+  useEffect(() => {
+    dispatch(fetchBanners());
+  }, [dispatch]);
+
+  useEffect(() => {
+    if (selectedBannerFromStore && (isEditing || viewMode)) {
+      const fileList = selectedBannerFromStore.banner
+        ? [
+            {
+              uid: selectedBannerFromStore.id || '-1',
+              name: selectedBannerFromStore.name || 'banner.png',
+              status: 'done',
+              url: selectedBannerFromStore.banner,
+            },
+          ]
+        : [];
+
+      form.setFieldsValue({
+        ...selectedBannerFromStore,
+        status: selectedBannerFromStore.status ? 1 : 0,
+        image: fileList,
+      });
+    } else if (!drawerVisible) {
+      form.resetFields();
+      dispatch(clearSelectedBanner());
+      form.setFieldsValue({ status: 1 });
+    }
+  }, [selectedBannerFromStore, form, isEditing, viewMode, drawerVisible, dispatch]);
+
+
+  useEffect(() => {
+    if (error) {
+      toast.error(error);
+      dispatch(clearError());
+    }
+  }, [error, dispatch]);
+
+  const showDrawer = (mode = "add", bannerId = null) => {
     form.resetFields();
-    setIsEditing(false);
-    setSelectedBanner(null);
-    setViewMode(false);
+    dispatch(clearSelectedBanner());
+    setCurrentBannerId(bannerId);
+    setIsEditing(mode === "edit");
+    setViewMode(mode === "view");
     setDrawerVisible(true);
+    if (mode === "add") {
+      form.setFieldsValue({ status: 1 });
+    } else if (bannerId) {
+        dispatch(fetchBannerById(bannerId));
+    }
   };
 
   const closeDrawer = () => {
     setDrawerVisible(false);
     setIsEditing(false);
-    setSelectedBanner(null);
     setViewMode(false);
+    setCurrentBannerId(null);
     form.resetFields();
+    dispatch(clearSelectedBanner());
   };
 
-  const onFinish = (values) => {
+  const onFinish = async (values) => {
     try {
-      const formData = {
-        ...values,
-        imagePath: "/api/placeholder/100/100",
-      };
-      
-      if (isEditing && selectedBanner) {
-        const updated = banners.map((banner) =>
-          banner.id === selectedBanner.id ? { ...banner, ...formData } : banner
-        );
-        setBanners(updated);
+      const formData = new FormData();
+      formData.append("name", values.name);
+      formData.append("slug", values.slug);
+      formData.append("status", values.status === 1 ? true : false);
+
+      if (values.image && values.image.length > 0 && values.image[0].originFileObj) {
+        formData.append("banner", values.image[0].originFileObj);
+      } else if (isEditing && selectedBannerFromStore && selectedBannerFromStore.banner && !(values.image && values.image.length > 0)) {
+      }
+
+
+      if (isEditing && selectedBannerFromStore) {
+        await dispatch(
+          updateBanner({
+            id: selectedBannerFromStore.id,
+            bannerFormData: formData,
+          })
+        ).unwrap();
         toast.success("Banner updated successfully");
       } else {
-        const newBanner = {
-          ...formData,
-          id: Math.max(...banners.map((b) => b.id)) + 1,
-        };
-        const updated = [...banners, newBanner];
-        setBanners(updated);
+        await dispatch(addBanner(formData)).unwrap();
         toast.success("Banner added successfully");
       }
       closeDrawer();
+      dispatch(fetchBanners());
     } catch (error) {
-      toast.error("Failed to save banner");
+      toast.error(
+        error.payload || error.message || "An unexpected error occurred during form submission."
+      );
+      console.error("Unhandled error during form submission:", error);
     }
   };
 
-  const openEditDrawer = (banner) => {
-    setSelectedBanner(banner);
-    setIsEditing(true);
-    setDrawerVisible(true);
-    form.setFieldsValue(banner);
-  };
-
-  const viewBanner = (banner) => {
-    setSelectedBanner(banner);
-    setViewMode(true);
-    setDrawerVisible(true);
-    form.setFieldsValue(banner);
-  };
-
-  const deleteBanner = (id) => {
+  const handleDeleteBanner = async (id) => {
     try {
-      const updated = banners.filter((b) => b.id !== id);
-      setBanners(updated);
-      toast.success("Banner deleted successfully");
+      const resultAction = await dispatch(deleteBanner(id));
+      if (deleteBanner.fulfilled.match(resultAction)) {
+        toast.success("Banner deleted successfully.");
+      } else {
+        toast.error(resultAction.payload?.message || "Failed to delete banner");
+      }
     } catch (error) {
-      toast.error("Failed to delete banner");
+      toast.error("An unexpected error occurred during deletion.");
+    }
+  };
+
+  const handleStatusChange = async (checked, record) => {
+    const newStatusBoolean = checked;
+    const resultAction = await dispatch(
+      updateBannerStatus({ id: record.id, status: newStatusBoolean })
+    );
+    if (updateBannerStatus.fulfilled.match(resultAction)) {
+      toast.success(
+        `Banner status updated to ${newStatusBoolean ? "Active" : "Inactive"}.`
+      );
+    } else {
+      toast.error(resultAction.payload || "Failed to update Banner status.");
     }
   };
 
   const renderStatusTag = (status) => {
+    const isActive = status;
     let color, text;
-    
-    switch (status) {
-      case 0:
-        color = "red";
-        text = "INACTIVE";
-        break;
-      case 1:
-        color = "orange";
-        text = "DRAFT";
-        break;
-      case 2:
-        color = "green";
-        text = "PUBLISHED";
-        break;
-      default:
-        color = "gray";
-        text = "UNKNOWN";
+
+    if (isActive) {
+      color = "green";
+      text = "ACTIVE";
+    } else {
+      color = "red";
+      text = "INACTIVE";
     }
-    
     return <Tag color={color}>{text}</Tag>;
   };
 
@@ -172,17 +202,18 @@ const Banner = () => {
       title: "Name",
       dataIndex: "name",
       key: "name",
+      sorter: (a, b) => a.name.localeCompare(b.name),
     },
     {
       title: "Image",
-      dataIndex: "imagePath",
-      key: "imagePath",
-      render: (imagePath) => (
+      dataIndex: "banner",
+      key: "banner",
+      render: (imageUrl) => (
         <Image
-          src={imagePath}
+          src={imageUrl}
           alt="Banner"
           style={{ width: 60, height: 60, objectFit: "cover" }}
-          preview={false}
+          preview={true}
         />
       ),
     },
@@ -190,18 +221,34 @@ const Banner = () => {
       title: "Status",
       dataIndex: "status",
       key: "status",
-      render: (status) => renderStatusTag(status),
+      width: 120,
+      render: (status, record) => {
+        const isCurrentlyActive = status;
+        return (
+          <Switch
+            checked={isCurrentlyActive}
+            onChange={(checked) => handleStatusChange(checked, record)}
+            loading={loading}
+            checkedChildren="Active"
+            unCheckedChildren="Inactive"
+            style={{
+              backgroundColor: isCurrentlyActive ? colors.success : colors.error,
+            }}
+          />
+        );
+      },
+      sorter: (a, b) => (a.status ? 1 : 0) - (b.status ? 1 : 0),
     },
     {
       title: "Actions",
       key: "actions",
-      width:150,
-      fixed:"right",
+      width: 150,
+      fixed: "right",
       render: (_, record) => (
         <Space>
           <Button
             icon={<EyeOutlined />}
-            onClick={() => viewBanner(record)}
+            onClick={() => showDrawer("view", record.id)}
             style={{
               backgroundColor: colors.buttonPrimaryBg,
               color: colors.buttonText,
@@ -209,7 +256,7 @@ const Banner = () => {
           />
           <Button
             icon={<EditOutlined />}
-            onClick={() => openEditDrawer(record)}
+            onClick={() => showDrawer("edit", record.id)}
             style={{
               backgroundColor: colors.buttonEditBg,
               color: colors.buttonText,
@@ -220,7 +267,7 @@ const Banner = () => {
             description="Are you sure to delete this banner?"
             okText="Yes"
             cancelText="No"
-            onConfirm={() => deleteBanner(record.id)}
+            onConfirm={() => handleDeleteBanner(record.id)}
           >
             <Button
               icon={<DeleteOutlined />}
@@ -235,12 +282,17 @@ const Banner = () => {
     },
   ];
 
+  const filteredBanners = banners.filter(
+    (banner) =>
+      banner.name?.toLowerCase().includes(searchTerm) ||
+      banner.description?.toLowerCase().includes(searchTerm)
+  );
 
   const generateSlug = (name) => {
     return name
       .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/(^-|-$)/g, '');
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/(^-|-$)/g, "");
   };
 
   return (
@@ -275,18 +327,18 @@ const Banner = () => {
           </h2>
 
           <Button
-              icon={<PlusOutlined />}
-              type="primary"
-              size="middle"
-              style={{
-                backgroundColor: colors.secondary,
-                border: "none",
-                padding: "0 16px",
-              }}
-              onClick={showDrawer}
-            >
-              Add Banner
-            </Button>
+            icon={<PlusOutlined />}
+            type="primary"
+            size="middle"
+            style={{
+              backgroundColor: colors.secondary,
+              border: "none",
+              padding: "0 16px",
+            }}
+            onClick={() => showDrawer("add")}
+          >
+            Add Banner
+          </Button>
         </div>
       </div>
       <div
@@ -297,28 +349,29 @@ const Banner = () => {
           boxShadow: "0 4px 10px rgba(0,0,0,0.06)",
         }}
       >
-                  <div style={{marginBottom:"16px", display: "flex", justifyContent:"flex-end" }}>
-            <Input.Search
-              placeholder="Search by name or description"
-              allowClear
-              onChange={(e) => setSearchTerm(e.target.value.toLowerCase())}
-              style={{ width: 250 }}
-            />
-          </div>
+        <div
+          style={{
+            marginBottom: "16px",
+            display: "flex",
+            justifyContent: "flex-end",
+          }}
+        >
+          <Input.Search
+            placeholder="Search by name or description"
+            allowClear
+            onChange={(e) => setSearchTerm(e.target.value.toLowerCase())}
+            style={{ width: 250 }}
+          />
+        </div>
         <div style={{ overflowX: "auto" }}>
-
-        <Table
-          dataSource={banners.filter(
-            (banner) =>
-              banner.name.toLowerCase().includes(searchTerm) ||
-              banner.description.toLowerCase().includes(searchTerm)
-          )}
-          columns={columns}
-          loading={loading}
-          rowKey="id"
-          scroll={{x:900}}
-          pagination={{ pageSize: 5 }}
-        />
+          <Table
+            dataSource={filteredBanners}
+            columns={columns}
+            loading={loading}
+            rowKey="id"
+            scroll={{ x: 900 }}
+            pagination={{ pageSize: 10 }}
+          />
         </div>
       </div>
 
@@ -331,7 +384,11 @@ const Banner = () => {
               color: "#fff",
             }}
           >
-            {viewMode ? "View Banner" : isEditing ? "Edit Banner" : "Add New Banner"}
+            {viewMode
+              ? "View Banner"
+              : isEditing
+              ? "Edit Banner"
+              : "Add New Banner"}
           </div>
         }
         width={400}
@@ -344,98 +401,145 @@ const Banner = () => {
           borderBottom: "1px solid #444",
         }}
       >
-        <Form
-          form={form}
-          layout="vertical"
-          onFinish={onFinish}
-          initialValues={{
-            status: 1, 
-          }}
-        >
-          <Form.Item
-            name="name"
-            label="Banner Name"
-            rules={[{ required: true, message: "Please enter the banner name" }]}
-          >
-            <Input 
-              placeholder="Enter banner name" 
-              disabled={viewMode} 
-              onChange={(e) => {
-                if (!isEditing && !viewMode) {
-                  const slug = generateSlug(e.target.value);
-                  form.setFieldsValue({ slug });
-                }
-              }}
-            />
-          </Form.Item>
-
-          <Form.Item
-            name="image"
-            label="Image"
-            valuePropName="fileList"
-          >
-            {viewMode ? (
-              selectedBanner && (
-                <Image
-                  src={selectedBanner.imagePath}
-                  alt="Banner"
-                  style={{ width: "100%", maxHeight: 200, objectFit: "cover" }}
-                />
-              )
-            ) : (
-              <Upload
-                accept="image/*"
-                listType="picture"
-                maxCount={1}
-                beforeUpload={() => false}
-                disabled={viewMode}
-              >
-                <Button icon={<UploadOutlined />} disabled={viewMode}>
-                  Upload Image
-                </Button>
-              </Upload>
+        {bannerLoading ? (
+          <div style={{ textAlign: "center", padding: "50px" }}>
+            <p>Loading banner data...</p>
+          </div>
+        ) : viewMode && selectedBannerFromStore ? (
+          <div>
+            <p>
+              <strong>Name:</strong> {selectedBannerFromStore.name}
+            </p>
+            <p>
+              <strong>Status:</strong>{" "}
+              {renderStatusTag(selectedBannerFromStore.status)}
+            </p>
+            {selectedBannerFromStore.banner && (
+              <Image
+                src={selectedBannerFromStore.banner}
+                alt="Banner"
+                style={{ width: "100%", maxHeight: 200, objectFit: "cover" }}
+                preview={true}
+              />
             )}
-          </Form.Item>
-
-          <Form.Item
-            name="status"
-            label="Status"
-            rules={[{ required: true, message: "Please select status" }]}
+          </div>
+        ) : (
+          <Form
+            form={form}
+            layout="vertical"
+            onFinish={onFinish}
+            initialValues={{
+              status: 1,
+            }}
           >
-            <Select disabled={viewMode}>
-              <Option value={0}>Inactive</Option>
-              <Option value={1}>Draft</Option>
-              <Option value={2}>Published</Option>
-            </Select>
-          </Form.Item>
+            <Form.Item
+              name="name"
+              label="Banner Name"
+              rules={[
+                { required: true, message: "Please enter the banner name" },
+              ]}
+            >
+              <Input
+                placeholder="Enter banner name"
+                disabled={viewMode}
+                onChange={(e) => {
+                  if (!isEditing && !viewMode) {
+                    const slug = generateSlug(e.target.value);
+                    form.setFieldsValue({ slug });
+                  }
+                }}
+              />
+            </Form.Item>
 
-          {!viewMode && (
-            <Form.Item>
-              <Row gutter={12}>
-                <Col span={12}>
-                  <Button
-                    onClick={closeDrawer}
-                    style={{ width: "100%", backgroundColor: "#FFFFFF" }}
-                  >
-                    Cancel
-                  </Button>
-                </Col>
-                <Col span={12}>
-                  <Button
-                    type="primary"
-                    htmlType="submit"
+            <Form.Item
+              name="slug"
+              label="Banner Slug"
+              rules={[
+                { required: true, message: "Please enter the banner slug" },
+              ]}
+            >
+              <Input
+                placeholder="Enter banner slug"
+                disabled={viewMode || isEditing}
+              />
+            </Form.Item>
+
+            <Form.Item
+              name="image"
+              label="Image"
+              valuePropName="fileList"
+              getValueFromEvent={(e) => e && e.fileList}
+              rules={[
+                { required: !isEditing, message: "Please upload an image" },
+              ]}
+            >
+              {viewMode ? (
+                selectedBannerFromStore && selectedBannerFromStore.banner && (
+                  <Image
+                    src={selectedBannerFromStore.banner}
+                    alt="Banner"
                     style={{
                       width: "100%",
-                      backgroundColor: colors.secondary,
+                      maxHeight: 200,
+                      objectFit: "cover",
                     }}
-                  >
-                    Submit
+                    preview={true}
+                  />
+                )
+              ) : (
+                <Upload
+                  accept="image/*"
+                  listType="picture"
+                  maxCount={1}
+                  beforeUpload={() => false}
+                  disabled={viewMode}
+                >
+                  <Button icon={<UploadOutlined />} disabled={viewMode}>
+                    Upload Image
                   </Button>
-                </Col>
-              </Row>
+                </Upload>
+              )}
             </Form.Item>
-          )}
-        </Form>
+
+            <Form.Item
+              name="status"
+              label="Status"
+              rules={[{ required: true, message: "Please select status" }]}
+            >
+              <Select disabled={viewMode}>
+                <Option value={1}>Active</Option>
+                <Option value={0}>Inactive</Option>
+              </Select>
+            </Form.Item>
+
+            {!viewMode && (
+              <Form.Item>
+                <Row gutter={12}>
+                  <Col span={12}>
+                    <Button
+                      onClick={closeDrawer}
+                      style={{ width: "100%", backgroundColor: "#FFFFFF" }}
+                    >
+                      Cancel
+                    </Button>
+                  </Col>
+                  <Col span={12}>
+                    <Button
+                      type="primary"
+                      htmlType="submit"
+                      style={{
+                        width: "100%",
+                        backgroundColor: colors.secondary,
+                      }}
+                    >
+                      Submit
+                    </Button>
+                  </Col>
+                </Row>
+              </Form.Item>
+            )}
+          </Form>
+        )}
       </Drawer>
     </div>
   );

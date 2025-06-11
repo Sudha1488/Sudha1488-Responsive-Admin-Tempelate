@@ -56,6 +56,7 @@ const State = () => {
   const [viewMode, setViewMode] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [currentStateId, setCurrentStateId] = useState(null);
+  const [countryFilter, setCountryFilter] = useState(null); // Added country filter state
 
   const [form] = Form.useForm();
 
@@ -123,10 +124,8 @@ const State = () => {
       const processedValues = {
         ...values,
         status: values.status === "active" ? 1 : 0,
-        code: values.code === undefined ? null : values.code,
         country_id: values.countryId,
       };
-      // console.log("Processed values to send:", processedValues);
 
       if (isEditing && selectedStateFromStore) {
         try {
@@ -135,7 +134,7 @@ const State = () => {
               id: selectedStateFromStore.id,
               stateData: processedValues,
             })
-          ).unwrap(); 
+          ).unwrap();
           toast.success("State updated successfully");
           closeDrawer();
           dispatch(fetchStates());
@@ -149,7 +148,7 @@ const State = () => {
           await dispatch(addState(processedValues)).unwrap();
           toast.success("State added successfully");
           closeDrawer();
-          dispatch(fetchStates()); 
+          dispatch(fetchStates());
         } catch (error) {
           toast.error(error.payload || error.message || "Failed to add state.");
         }
@@ -203,14 +202,6 @@ const State = () => {
       dataIndex: "name",
       key: "name",
       sorter: (a, b) => a.name.localeCompare(b.name),
-    },
-    {
-      title: "Code",
-      dataIndex: "code",
-      key: "code",
-      render:(text,record)=>{
-        return record.code? record.code : `${record.name}_code`
-      }
     },
     {
       title: "Country",
@@ -284,13 +275,13 @@ const State = () => {
       ),
     },
   ];
+
   const filteredStates = states.filter(
     (state) =>
-      state.name?.toLowerCase().includes(searchTerm) ||
-      String(state.code || "")
-        .toLowerCase()
-        .includes(searchTerm)
+      state.name?.toLowerCase().includes(searchTerm) &&
+      (countryFilter ? state.countryId?.id === countryFilter : true)
   );
+
   return (
     <div>
       <div
@@ -349,10 +340,11 @@ const State = () => {
             marginBottom: "16px",
             display: "flex",
             justifyContent: "flex-end",
+            gap: "12px", 
           }}
         >
           <Input.Search
-            placeholder="Search by name or code"
+            placeholder="Search by name"
             allowClear
             onChange={(e) => setSearchTerm(e.target.value.toLowerCase())}
             style={{ width: 200 }}
@@ -360,7 +352,7 @@ const State = () => {
 
           <Select
             placeholder="Filter by Country"
-            allowClearkfq
+            allowClear
             style={{ width: 180 }}
             onChange={(value) => setCountryFilter(value)}
             loading={!countriesList.length}
@@ -436,23 +428,6 @@ const State = () => {
               <Input
                 placeholder="Enter state name"
                 disabled={viewMode}
-                // style={{ textTransform: "uppercase" }}
-              />
-            </Form.Item>
-
-            <Form.Item
-              name="code"
-              label="State Code"
-              rules={
-                [
-                  // { required: true, message: "Please enter state code" },
-                ]
-              }
-            >
-              <Input
-                placeholder="Enter state code"
-                disabled={viewMode}
-                maxLength={10}
                 // style={{ textTransform: "uppercase" }}
               />
             </Form.Item>

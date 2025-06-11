@@ -5,15 +5,11 @@ const StateViewDetails = ({state}) => {
   if (!state) {
     return <Typography.Text>No state data available.</Typography.Text>;
   }
-  const displayCode = state.code ? state.code : `${state.name}_code`;
 
   return (
     <Space direction="vertical" style={{ width: '100%' }}>
       <Typography.Paragraph>
         <strong>Name:</strong> {state.name}
-      </Typography.Paragraph>
-      <Typography.Paragraph>
-        <strong>Code:</strong> {displayCode}
       </Typography.Paragraph>
       <Typography.Paragraph>
         <strong>Country:</strong> {state.countryId?.name || 'N/A'}

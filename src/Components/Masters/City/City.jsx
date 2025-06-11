@@ -5,7 +5,6 @@ import {
   Input,
   Select,
   Table,
-  Tag,
   Space,
   Row,
   Col,
@@ -125,7 +124,6 @@ const City = () => {
       const processedValues = {
         ...values,
         status: values.status === "active" ? 1 : 0,
-        code: values.code === undefined ? null : values.code,
         state_id: values.stateId,
       };
       if (isEditing && selectedCityFromStore) {
@@ -133,7 +131,7 @@ const City = () => {
           const result = await dispatch(
             updateCity({
               id: selectedCityFromStore.id,
-              cityData: processedValues,
+              cityFormData: processedValues,
             })
           ).unwrap();
           toast.success("City updated successfully");
@@ -141,7 +139,7 @@ const City = () => {
           dispatch(fetchCities());
         } catch (error) {
           toast.error(
-            error.payload || error.message || "Failed to update citye."
+            error.payload || error.message || "Failed to update city."
           );
         }
       } else {
@@ -166,7 +164,7 @@ const City = () => {
       const resultAction = await dispatch(deleteCity(id));
       if (deleteCity.fulfilled.match(resultAction)) {
         toast.success("City Deleted successfully.");
-        dispatch(fetchCities()); 
+        dispatch(fetchCities());
       } else {
         toast.error(resultAction.payload?.message || "Failed to delete city");
       }
@@ -189,27 +187,20 @@ const City = () => {
       toast.error(resultAction.payload || "Failed to update City status.");
     }
   };
+
   const getStateName = (stateId) => {
     if (!stateList || !Array.isArray(stateList) || stateList.length === 0) {
-        return "Loading States...";
+      return "Loading States...";
     }
     const state = stateList.find((s) => s.id === stateId);
     return state ? state.name : "Unknown State";
-};
+  };
 
   const columns = [
     {
       title: "Name",
       dataIndex: "name",
       key: "name",
-    },
-    {
-      title: "Code",
-      dataIndex: "code",
-      key: "code",
-      render: (text, record) => {
-        return record.code ? record.code : `${record.name}_code`;
-      },
     },
     {
       title: "State",
@@ -287,10 +278,7 @@ const City = () => {
 
   const filteredCities = cities.filter(
     (city) =>
-      city.name?.toLowerCase().includes(searchTerm) ||
-      String(city.code || "")
-        .toLowerCase()
-        .includes(searchTerm)
+      city.name?.toLowerCase().includes(searchTerm)
   );
 
   return (
@@ -351,10 +339,11 @@ const City = () => {
             marginBottom: "16px",
             display: "flex",
             justifyContent: "flex-end",
+            gap: "12px",  
           }}
         >
           <Input.Search
-            placeholder="Search by name or code"
+            placeholder="Search by name"
             allowClear
             onChange={(e) => setSearchTerm(e.target.value.toLowerCase())}
             style={{ width: 200 }}
@@ -399,89 +388,81 @@ const City = () => {
           backgroundColor: colors.secondary,
           borderBottom: "1px solid #444",
         }}
-      >{cityLoading ? (<div style={{ textAlign: "center", padding: "50px" }}>
+      >
+        {cityLoading ? (
+          <div style={{ textAlign: "center", padding: "50px" }}>
             <p>Loading state data...</p>
-          </div>): viewMode && selectedCityFromStore? (<CityViewDetails city={selectedCityFromStore}/>):(<Form
-          form={form}
-          layout="vertical"
-          onFinish={onFinish}
-          initialValues={{ status: "active" }}
-        >
-          <Form.Item
-            name="name"
-            label="City Name"
-            rules={[{ required: true, message: "Please enter the city name" },
-              { min: 2, message: "State name must be at least 2 characters" },
-            ]}
+          </div>
+        ) : viewMode && selectedCityFromStore ? (
+          <CityViewDetails city={selectedCityFromStore} />
+        ) : (
+          <Form
+            form={form}
+            layout="vertical"
+            onFinish={onFinish}
+            initialValues={{ status: "active" }}
           >
-            <Input placeholder="Enter city name" disabled={viewMode} />
-          </Form.Item>
-
-          <Form.Item
-            name="code"
-            label="City Code"
-            rules={[
-              // { required: true, message: "Please enter city code" },
-            ]}
-          >
-            <Input
-              placeholder="Enter city code"
-              disabled={viewMode}
-              maxLength={10}
-              // style={{ textTransform: "uppercase" }}
-            />
-          </Form.Item>
-
-          <Form.Item
-            name="stateId"
-            label="State"
-            rules={[{ required: true, message: "Please select a state" }]}
-          >
-            <Select placeholder="Select state" disabled={viewMode} showSearch>
-              {stateList.map((state) => (
-                <Option key={state.id} value={state.id}>
-                  {state.name}
-                </Option>
-              ))}
-            </Select>
-          </Form.Item>
-
-          <Form.Item
-            name="status"
-            label="Status"
-            rules={[{ required: true, message: "Please select status" }]}
-          >
-            <Select disabled={viewMode}>
-              <Option value="active">Active</Option>
-              <Option value="inactive">Inactive</Option>
-            </Select>
-          </Form.Item>
-
-          {!viewMode && (
-            <Form.Item>
-              <Row gutter={12}>
-                <Col span={12}>
-                  <Button
-                    onClick={closeDrawer}
-                    style={{ width: "100%", backgroundColor: "#FFFFFF" }}
-                  >
-                    Cancel
-                  </Button>
-                </Col>
-                <Col span={12}>
-                  <Button
-                    type="primary"
-                    htmlType="submit"
-                    style={{ width: "100%", backgroundColor: colors.secondary }}
-                  >
-                    Submit
-                  </Button>
-                </Col>
-              </Row>
+            <Form.Item
+              name="name"
+              label="City Name"
+              rules={[
+                { required: true, message: "Please enter the city name" },
+                { min: 2, message: "City name must be at least 2 characters" },
+              ]}
+            >
+              <Input placeholder="Enter city name" disabled={viewMode} />
             </Form.Item>
-          )}
-        </Form>)}
-        
+
+            <Form.Item
+              name="stateId"
+              label="State"
+              rules={[{ required: true, message: "Please select a state" }]}
+            >
+              <Select placeholder="Select state" disabled={viewMode} showSearch>
+                {stateList.map((state) => (
+                  <Option key={state.id} value={state.id}>
+                    {state.name}
+                  </Option>
+                ))}
+              </Select>
+            </Form.Item>
+
+            <Form.Item
+              name="status"
+              label="Status"
+              rules={[{ required: true, message: "Please select status" }]}
+            >
+              <Select disabled={viewMode}>
+                <Option value="active">Active</Option>
+                <Option value="inactive">Inactive</Option>
+              </Select>
+            </Form.Item>
+
+            {!viewMode && (
+              <Form.Item>
+                <Row gutter={12}>
+                  <Col span={12}>
+                    <Button
+                      onClick={closeDrawer}
+                      style={{ width: "100%", backgroundColor: "#FFFFFF" }}
+                    >
+                      Cancel
+                    </Button>
+                  </Col>
+                  <Col span={12}>
+                    <Button
+                      type="primary"
+                      htmlType="submit"
+                      style={{ width: "100%", backgroundColor: colors.secondary }}
+                    >
+                      Submit
+                    </Button>
+                  </Col>
+                </Row>
+              </Form.Item>
+            )}
+          </Form>
+        )}
       </Drawer>
     </div>
   );

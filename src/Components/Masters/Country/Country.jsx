@@ -71,7 +71,6 @@ const Country = () => {
           selectedCountryFromStore.status === true
             ? "active"
             : "inactive",
-        code: String(selectedCountryFromStore.code),
       });
     } else {
       form.resetFields();
@@ -108,7 +107,6 @@ const Country = () => {
       const processedValues = {
         ...values,
         status: values.status === "active" ? 1 : 0,
-        code: values.code.toUpperCase(),
       };
 
       let resultAction;
@@ -187,15 +185,6 @@ const Country = () => {
       sorter: (a, b) => a.name.localeCompare(b.name),
     },
     {
-      title: "Code",
-      dataIndex: "code",
-      key: "code",
-      render:(text,record)=>{
-        return record.code ? record.code : `${record.name}_code`
-      },
-      sorter: (a, b) => a.code.localeCompare(b.code),
-    },
-    {
       title: "Status",
       dataIndex: "status",
       key: "status",
@@ -261,10 +250,9 @@ const Country = () => {
   ];
 
   const filteredCountries = countries.filter(
-  (country) =>
-    country.name?.toLowerCase().includes(searchTerm) ||
-    String(country.code)?.toLowerCase().includes(searchTerm) 
-);
+    (country) =>
+      country.name?.toLowerCase().includes(searchTerm)
+  );
 
   return (
     <div>
@@ -328,7 +316,7 @@ const Country = () => {
           }}
         >
           <Input.Search
-            placeholder="Search by name or code"
+            placeholder="Search by name"
             allowClear
             onChange={(e) => setSearchTerm(e.target.value.toLowerCase())}
             style={{ width: 250 }}
@@ -396,18 +384,6 @@ const Country = () => {
               ]}
             >
               <Input placeholder="Enter country name" disabled={viewMode} />
-            </Form.Item>
-
-            <Form.Item
-              name="code"
-              label="Country Code"
-            >
-              <Input
-                placeholder="Enter country code"
-                disabled={viewMode}
-                maxLength={10}
-                // style={{ textTransform: "uppercase" }}
-              />
             </Form.Item>
 
             <Form.Item

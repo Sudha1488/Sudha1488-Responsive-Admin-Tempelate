@@ -7,6 +7,7 @@ import helperSlice from './slice/helper/helperSlice';
 import countriesSlice from './slice/country/countrySlice'
 import statesSlice from './slice/state/stateSlice';
 import citiesSlice from './slice/city/citySlice'
+import bannersSlice from "./slice/banner/bannerSlice";
 
 
 export const store = configureStore({
@@ -18,6 +19,7 @@ export const store = configureStore({
     helper:helperSlice,
     countries:countriesSlice,
     states:statesSlice,
-    cities:citiesSlice
+    cities:citiesSlice,
+    banners:bannersSlice,
   },
 });

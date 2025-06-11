@@ -14,9 +14,6 @@ const CityViewDetails = ({ city }) => {
         <strong>Name:</strong> {city.name}
       </Typography.Paragraph>
       <Typography.Paragraph>
-        <strong>Code:</strong> {displayCode}
-      </Typography.Paragraph>
-      <Typography.Paragraph>
         <strong>State:</strong> {city.stateId?.name || 'N/A'}
       </Typography.Paragraph>
       <Typography.Paragraph>
