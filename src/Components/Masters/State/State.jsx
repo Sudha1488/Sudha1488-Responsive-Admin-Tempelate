@@ -56,7 +56,7 @@ const State = () => {
   const [viewMode, setViewMode] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [currentStateId, setCurrentStateId] = useState(null);
-  const [countryFilter, setCountryFilter] = useState(null); // Added country filter state
+  const [countryFilter, setCountryFilter] = useState(null);
 
   const [form] = Form.useForm();
 
@@ -441,7 +441,11 @@ const State = () => {
                 placeholder="Select country"
                 disabled={viewMode}
                 loading={!countriesList.length}
-                showSearch
+                showSearch 
+                optionFilterProp="children" 
+                filterOption={(input, option) =>
+                  option.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                }
               >
                 {countriesList.map((country) => (
                   <Option key={country.id} value={country.id}>
@@ -449,6 +453,13 @@ const State = () => {
                   </Option>
                 ))}
               </Select>
+            </Form.Item>
+
+            <Form.Item
+              name="state_code"
+              label="State Code"
+            >
+              <Input placeholder="Enter State code" disabled={viewMode} />
             </Form.Item>
 
             <Form.Item

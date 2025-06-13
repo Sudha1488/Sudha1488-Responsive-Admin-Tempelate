@@ -8,6 +8,7 @@ import countriesSlice from './slice/country/countrySlice'
 import statesSlice from './slice/state/stateSlice';
 import citiesSlice from './slice/city/citySlice'
 import bannersSlice from "./slice/banner/bannerSlice";
+import categoriesSlice from "./slice/category/categorySlice";
 
 
 export const store = configureStore({
@@ -21,5 +22,6 @@ export const store = configureStore({
     states:statesSlice,
     cities:citiesSlice,
     banners:bannersSlice,
+    categories:categoriesSlice,
   },
 });

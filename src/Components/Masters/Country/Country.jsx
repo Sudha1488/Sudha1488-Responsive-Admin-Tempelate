@@ -387,6 +387,13 @@ const Country = () => {
             </Form.Item>
 
             <Form.Item
+              name="country_code"
+              label="Country Code"
+            >
+              <Input placeholder="Enter country code" disabled={viewMode} />
+            </Form.Item>
+
+            <Form.Item
               name="status"
               label="Status"
               rules={[{ required: true, message: "Please select status" }]}

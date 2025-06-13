@@ -209,7 +209,10 @@ const City = () => {
       render: (text, record) => {
         return record.stateId?.name || getStateName(record.stateId);
       },
-      sorter: (a, b) => (getStateName(a.stateId) || "").localeCompare(getStateName(b.stateId) || ""),
+      sorter: (a, b) =>
+        (getStateName(a.stateId) || "").localeCompare(
+          getStateName(b.stateId) || ""
+        ),
     },
     {
       title: "Status",
@@ -278,7 +281,8 @@ const City = () => {
 
   const filteredCities = cities.filter(
     (city) =>
-      city.name?.toLowerCase().includes(searchTerm)
+      city.name?.toLowerCase().includes(searchTerm) &&
+      (stateFilter ? city.stateId?.id === stateFilter : true)
   );
 
   return (
@@ -339,7 +343,7 @@ const City = () => {
             marginBottom: "16px",
             display: "flex",
             justifyContent: "flex-end",
-            gap: "12px",  
+            gap: "12px",
           }}
         >
           <Input.Search
@@ -413,12 +417,27 @@ const City = () => {
               <Input placeholder="Enter city name" disabled={viewMode} />
             </Form.Item>
 
+            <Form.Item name="city_code" label="City Code">
+              <Input placeholder="Enter city code" disabled={viewMode} />
+            </Form.Item>
+
             <Form.Item
               name="stateId"
               label="State"
+              showSearch
               rules={[{ required: true, message: "Please select a state" }]}
             >
-              <Select placeholder="Select state" disabled={viewMode} showSearch>
+              <Select
+                placeholder="Select state"
+                disabled={viewMode}
+                loading={!stateList.length}
+                showSearch
+                optionFilterProp="children"
+                filterOption={(input, option) =>
+                  option.children.toLowerCase().indexOf(input.toLowerCase()) >=
+                  0
+                }
+              >
                 {stateList.map((state) => (
                   <Option key={state.id} value={state.id}>
                     {state.name}
@@ -453,7 +472,10 @@ const City = () => {
                     <Button
                       type="primary"
                       htmlType="submit"
-                      style={{ width: "100%", backgroundColor: colors.secondary }}
+                      style={{
+                        width: "100%",
+                        backgroundColor: colors.secondary,
+                      }}
                     >
                       Submit
                     </Button>
